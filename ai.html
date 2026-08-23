@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>العسولي - النهائي</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+body{margin:0;padding:12px;background:#0f172a;color:#fff;font-family:system-ui}
+.card{background:#1e293b;border-radius:16px;padding:14px;margin-bottom:12px}
+#map{height:500px;border-radius:16px}
+button{width:100%;padding:14px;border:0;border-radius:12px;background:#22c55e;font-weight:700}
+input{width:100%;padding:14px;border-radius:12px;border:0;box-sizing:border-box}
+</style>
+</head>
+<body>
+<h2>منصة العسولي - النسخة النهائية</h2>
+<div class="card">
+<input id="q" placeholder="اكتب: اوزنجول">
+<button onclick="ask()">اسأل العسولي</button>
+<div id="ans" style="margin-top:10px;color:#86efac"></div>
+</div>
+<div class="card"><div id="map"></div></div>
+<script>
+const map=L.map('map').setView([40.99,39.71],8);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+const p={"اوزنجول":[40.58,40.29],"طرابزون":[41,39.71],"ايدر":[40.95,41.09]};
+for(let k in p)L.marker(p[k]).addTo(map).bindPopup(k);
+function ask(){let q=document.getElementById('q').value;let u=new SpeechSynthesisUtterance("أبشر يا عسول "+q);u.lang='ar-SA';speechSynthesis.speak(u);document.getElementById('ans').innerText="فتحت لك "+q;for(let k in p)if(q.includes(k))map.flyTo(p[k],14)}
+</script>
+</body>
+</html>
