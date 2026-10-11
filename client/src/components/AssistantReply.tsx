@@ -77,7 +77,7 @@ export function AssistantReply({ text, language, autoSpeak = false, voiceGender 
     if (typeof window === "undefined" || typeof SpeechSynthesisUtterance === "undefined") return;
     const synthesis = window.speechSynthesis;
     if (!synthesis) return;
-
+    
     synthesis.cancel();
     const spokenText = cleanSpeechText(text);
     if (!spokenText) return;
@@ -87,15 +87,15 @@ export function AssistantReply({ text, language, autoSpeak = false, voiceGender 
     utterance.rate = 0.9; // أبطأ عشان ما يقطع
     utterance.pitch = voiceGender === "male" ? 0.9 : 1.05;
     utterance.volume = 1;
-
+    
     const voices = synthesis.getVoices();
     const selectedVoice = chooseVoice(utterance.lang, voiceGender, voices);
     if (selectedVoice) utterance.voice = selectedVoice;
-
+    
     utterance.onstart = () => setIsSpeaking(true);
     utterance.onend = () => setIsSpeaking(false);
     utterance.onerror = () => setIsSpeaking(false);
-
+    
     utteranceRef.current = utterance;
     synthesis.speak(utterance);
   };
