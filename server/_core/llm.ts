@@ -125,30 +125,24 @@ const normalizeContentPart = (
   if (typeof part === "string") {
     return { type: "text", text: part };
   }
-
   if (part.type === "text") {
     return part;
   }
-
   if (part.type === "image_url") {
     return part;
   }
-
   if (part.type === "file_url") {
     return part;
   }
-
   throw new Error("Unsupported message content part");
 };
 
 const normalizeMessage = (message: Message) => {
   const { role, name, tool_call_id } = message;
-
   if (role === "tool" || role === "function") {
     const content = ensureArray(message.content)
       .map(part => (typeof part === "string" ? part : JSON.stringify(part)))
       .join("\n");
-
     return {
       role,
       name,
@@ -156,10 +150,7 @@ const normalizeMessage = (message: Message) => {
       content,
     };
   }
-
   const contentParts = ensureArray(message.content).map(normalizeContentPart);
-
-  // If there's only text content, collapse to a single string for compatibility
   if (contentParts.length === 1 && contentParts[0].type === "text") {
     return {
       role,
@@ -167,7 +158,6 @@ const normalizeMessage = (message: Message) => {
       content: contentParts[0].text,
     };
   }
-
   return {
     role,
     name,
@@ -180,49 +170,56 @@ const normalizeToolChoice = (
   tools: Tool[] | undefined
 ): "none" | "auto" | ToolChoiceExplicit | undefined => {
   if (!toolChoice) return undefined;
-
   if (toolChoice === "none" || toolChoice === "auto") {
     return toolChoice;
   }
-
   if (toolChoice === "required") {
     if (!tools || tools.length === 0) {
-      throw new Error(
-        "tool_choice 'required' was provided but no tools were configured"
-      );
+      throw new Error("tool_choice 'required' was provided but no tools were configured");
     }
-
     if (tools.length > 1) {
-      throw new Error(
-        "tool_choice 'required' needs a single tool or specify the tool name explicitly"
-      );
+      throw new Error("tool_choice 'required' needs a single tool or specify the tool name explicitly");
     }
-
     return {
       type: "function",
       function: { name: tools[0].function.name },
     };
   }
-
   if ("name" in toolChoice) {
     return {
       type: "function",
       function: { name: toolChoice.name },
     };
   }
-
   return toolChoice;
 };
 
-const resolveApiUrl = () =>
-  ENV.forgeApiUrl && ENV.forgeApiUrl.trim().length > 0
-    ? `${ENV.forgeApiUrl.replace(/\/$/, "")}/v1/chat/completions`
-    : "https://forge.manus.im/v1/chat/completions";
+// FIXED: ط¯ط¹ظ… Groq ظƒط¨ط¯ظٹظ„ ط§ط°ط§ Forge ظ…ظˆ ظ…ظˆط¬ظˆط¯ (ظ„ظ€ Vercel)
+const resolveApiUrl = () => {
+  if (ENV.forgeApiUrl && ENV.forgeApiUrl.trim().length > 0) {
+    return `${ENV.forgeApiUrl.replace(/\/$/, "")}/v1/chat/completions`;
+  }
+  // Fallback ظ„ظ€ Groq ظپظٹ Vercel
+  if (process.env.GROQ_API_KEY) {
+    return "https://api.groq.com/openai/v1/chat/completions";
+  }
+  return "https://forge.manus.im/v1/chat/completions";
+};
 
 const assertApiKey = () => {
-  if (!ENV.forgeApiKey) {
-    throw new Error("OPENAI_API_KEY is not configured");
+  if (ENV.forgeApiKey) return;
+  if (process.env.GROQ_API_KEY) return;
+  throw new Error("OPENAI_API_KEY is not configured - ط¶ط¹ GROQ_API_KEY ظپظٹ Vercel");
+};
+
+const getApiKey = () => {
+  if (ENV.forgeApiKey && ENV.forgeApiKey.trim().length > 0) {
+    return ENV.forgeApiKey;
   }
+  if (process.env.GROQ_API_KEY && process.env.GROQ_API_KEY.trim().length > 0) {
+    return process.env.GROQ_API_KEY;
+  }
+  return "";
 };
 
 const normalizeResponseFormat = ({
@@ -246,20 +243,15 @@ const normalizeResponseFormat = ({
       explicitFormat.type === "json_schema" &&
       !explicitFormat.json_schema?.schema
     ) {
-      throw new Error(
-        "responseFormat json_schema requires a defined schema object"
-      );
+      throw new Error("responseFormat json_schema requires a defined schema object");
     }
     return explicitFormat;
   }
-
   const schema = outputSchema || output_schema;
   if (!schema) return undefined;
-
   if (!schema.name || !schema.schema) {
     throw new Error("outputSchema requires both name and schema");
   }
-
   return {
     type: "json_schema",
     json_schema: {
@@ -270,9 +262,9 @@ const normalizeResponseFormat = ({
   };
 };
 
-const RETRY_MAX_RETRIES = 4;
-const RETRY_BASE_DELAY_MS = 500;
-const RETRY_MAX_DELAY_MS = 30_000;
+const RETRY_MAX_RETRIES = 2; // ظ‚ظ„ظ„ظ†ط§ ط§ظ„ظ…ط­ط§ظˆظ„ط§طھ ط¹ط´ط§ظ† ظ…ط§ ظٹط¹ظ„ظ‚ ط§ظ„ط¨ظˆظƒط³
+const RETRY_BASE_DELAY_MS = 300;
+const RETRY_MAX_DELAY_MS = 5000;
 
 type FetchInit = NonNullable<Parameters<typeof fetch>[1]>;
 
@@ -287,9 +279,6 @@ const parseRetryAfter = (value: string | null): number | undefined => {
   return Number.isNaN(at) ? undefined : Math.max(0, at - Date.now());
 };
 
-// Equal-jitter exponential backoff. The cap/2 floor guarantees a minimum
-// delay so a misbehaving caller loop slows down instead of hammering the
-// upstream while it keeps returning errors.
 const computeBackoffDelay = (
   attempt: number,
   retryAfterMs?: number
@@ -299,43 +288,28 @@ const computeBackoffDelay = (
   return Math.min(Math.max(jittered, retryAfterMs ?? 0), RETRY_MAX_DELAY_MS);
 };
 
-// Retries non-2xx responses and network errors with exponential backoff, then
-// returns the final Response so callers keep their existing error handling.
 const fetchWithBackoff = async (
   url: string,
   init: FetchInit
 ): Promise<Response> => {
   let lastError: unknown;
-
   for (let attempt = 0; attempt <= RETRY_MAX_RETRIES; attempt++) {
     try {
       const response = await fetch(url, init);
       if (response.ok || attempt === RETRY_MAX_RETRIES) {
         return response;
       }
-
-      const retryAfterMs = parseRetryAfter(
-        response.headers.get("retry-after")
-      );
+      const retryAfterMs = parseRetryAfter(response.headers.get("retry-after"));
       try {
         await response.body?.cancel();
-      } catch {
-        // Body already settled; nothing to clean up.
-      }
-      console.warn(
-        `LLM request retry ${attempt + 1}/${RETRY_MAX_RETRIES} after status ${response.status}`
-      );
+      } catch {}
       await sleep(computeBackoffDelay(attempt, retryAfterMs));
     } catch (error) {
       lastError = error;
       if (attempt === RETRY_MAX_RETRIES) throw error;
-      console.warn(
-        `LLM request retry ${attempt + 1}/${RETRY_MAX_RETRIES} after network error`
-      );
       await sleep(computeBackoffDelay(attempt));
     }
   }
-
   throw lastError instanceof Error
     ? lastError
     : new Error("LLM request failed after exhausting retries");
@@ -366,8 +340,19 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     messages: messages.map(normalizeMessage),
   };
 
-  if (model) {
-    payload.model = model;
+  // FIXED: ط§ط³طھط®ط¯ظ… ظ…ظˆط¯ظٹظ„ Groq ط§ظ„ط¬ط¯ظٹط¯ ط§ظ„ط´ط؛ط§ظ„ - ط§ظ„ظ‚ط¯ظٹظ… ط§ظ†طھظ‡ظ‰
+  const isGroq = !!process.env.GROQ_API_KEY && !ENV.forgeApiKey;
+  if (isGroq) {
+    payload.model = "llama-3.3-70b-versatile";
+  } else if (model) {
+    // ط­طھظ‰ ظ„ظˆ ForgeطŒ ط§ط³طھط®ط¯ظ… ط§ظ„ظ…ظˆط¯ظٹظ„ ط§ظ„ط¬ط¯ظٹط¯
+    if (model.includes("llama-3.1")) {
+      payload.model = "llama-3.3-70b-versatile";
+    } else {
+      payload.model = model;
+    }
+  } else {
+    payload.model = "llama-3.3-70b-versatile";
   }
 
   if (tools && tools.length > 0) {
@@ -388,6 +373,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
   } else {
     const resolvedMaxTokens = max_tokens ?? maxTokens;
     if (typeof resolvedMaxTokens === "number") payload.max_tokens = resolvedMaxTokens;
+    else payload.max_tokens = 400; // ط­ط¯ ط§ظپطھط±ط§ط¶ظٹ ط¹ط´ط§ظ† ظ…ط§ ظٹط¹ظ„ظ‚
   }
 
   if (thinking) {
@@ -408,19 +394,23 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     payload.response_format = normalizedResponseFormat;
   }
 
-  const response = await fetchWithBackoff(resolveApiUrl(), {
+  const apiKey = getApiKey();
+  const apiUrl = resolveApiUrl();
+
+  const response = await fetchWithBackoff(apiUrl, {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      authorization: `Bearer ${ENV.forgeApiKey}`,
+      authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
+    console.error("LLM Error:", response.status, errorText);
     throw new Error(
-      `LLM invoke failed: ${response.status} ${response.statusText} – ${errorText}`
+      `LLM invoke failed: ${response.status} ${response.statusText} â€“ ${errorText}`
     );
   }
 
@@ -441,19 +431,19 @@ export type ModelsResponse = {
 
 export async function listLLMModels(): Promise<ModelsResponse> {
   assertApiKey();
-
+  const apiKey = getApiKey();
   const url = ENV.forgeApiUrl && ENV.forgeApiUrl.trim().length > 0
     ? `${ENV.forgeApiUrl.replace(/\/$/, "")}/v1/models`
-    : "https://forge.manus.im/v1/models";
+    : "https://api.groq.com/openai/v1/models";
 
   const response = await fetchWithBackoff(url, {
-    headers: { authorization: `Bearer ${ENV.forgeApiKey}` },
+    headers: { authorization: `Bearer ${apiKey}` },
   });
 
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(
-      `List LLM models failed: ${response.status} ${response.statusText} – ${errorText}`
+      `List LLM models failed: ${response.status} ${response.statusText} â€“ ${errorText}`
     );
   }
 
