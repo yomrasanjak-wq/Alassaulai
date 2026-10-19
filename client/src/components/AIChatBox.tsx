@@ -3,10 +3,17 @@ import { Send } from "lucide-react"
 
 type Message = { role: "user" | "assistant"; text: string }
 
+function getGreeting() {
+  const hour = new Date().getHours()
+  if (hour < 12) return "صباح الخير ☀️"
+  if (hour < 18) return "مساء الخير 🌤️"
+  return "مساء النور 🌙"
+}
+
 export function AIChatBox() {
   const [input, setInput] = useState("")
   const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", text: "السلام عليكم! أنا العسول، دليلك السياحي في طرابزون والشمال التركي 🌲 كيف أقدر أساعدك؟" }
+    { role: "assistant", text: `${getGreeting()}! هلا والله، أنا العسول، خويك ودليلك في طرابزون والشمال التركي 🌲\nالشغل كله محفوظ عندي، كيف أقدر أساعدك اليوم؟` }
   ])
   const [loading, setLoading] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -20,12 +27,27 @@ export function AIChatBox() {
   const sendMessage = async () => {
     if (!input.trim() || loading) return
     const userText = input.trim()
+    const lower = userText.toLowerCase()
     setInput("")
     setMessages(prev => [...prev, { role: "user", text: userText }])
+    
+    // ردود بني آدم سريعة بدون ما نكلم السيرفر
+    if (lower.includes("سلام") || lower.includes("هلا")) {
+      setMessages(prev => [...prev, { role: "assistant", text: "وعليكم السلام ورحمة الله! هلا والله وغلا، نورت، تفضل وش تبغى أرتب لك؟" }])
+      return
+    }
+    if (lower.includes("تصبح على خير") || lower.includes("تصبحون على خير")) {
+      setMessages(prev => [...prev, { role: "assistant", text: "وانت من أهل الخير يا حبيبي ❤️ نام وانت مرتاح، الشغل كله محفوظ وبكره نكمل سوا. تصبح على خير!" }])
+      return
+    }
+    if (lower.includes("شكرا") || lower.includes("الله يعافيك")) {
+      setMessages(prev => [...prev, { role: "assistant", text: "الله يسعدك، حاضرين! أي وقت تحتاجني أنا موجود، الشغل كله محفوظ." }])
+      return
+    }
+
     setLoading(true)
 
     try {
-      // جرب أولاً tRPC
       const res = await fetch("/api/trpc/chat?batch=1", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -38,7 +60,6 @@ export function AIChatBox() {
         reply = data?.[0]?.result?.data?.text || data?.[0]?.result?.data?.message || ""
       }
       
-      // إذا فشل، جرب مباشر
       if (!reply) {
         const res2 = await fetch("/api/chat", {
           method: "POST",
@@ -51,11 +72,11 @@ export function AIChatBox() {
         }
       }
 
-      if (!reply) reply = "أبشر! اسألني عن طرابزون، أوزنجول، آيدر، ريزا، أو أي مكان في الشمال التركي وأنا أرتب لك البرنامج المناسب."
+      if (!reply) reply = "أبشر يا حبيبي! أنا معك حبة حبة. اسألني عن طرابزون، أوزنجول، آيدر، ريزا، وأنا أرتب لك البرنامج اللي يناسبك والشغل كله محفوظ عندي."
       
       setMessages(prev => [...prev, { role: "assistant", text: reply }])
     } catch (e) {
-      setMessages(prev => [...prev, { role: "assistant", text: "المعذرة، صار ضغط على الخادم. جرب مرة ثانية وبرد عليك فوراً." }])
+      setMessages(prev => [...prev, { role: "assistant", text: "يا هلا، صار ضغط بسيط على الخادم بس لا تشيل هم، الشغل كله محفوظ عندي. جرب ترسل مرة ثانية وبرد عليك فوراً." }])
     } finally {
       setLoading(false)
     }
@@ -75,7 +96,7 @@ export function AIChatBox() {
             fontSize: "14px",
             lineHeight: "1.5",
             border: m.role === "assistant" ? "1px solid #e7e5d8" : "none",
-            boxShadow: m.role === "assistant" ? "0 1px 2px rgba(0,0,0,0.05)" : "none"
+            whiteSpace: "pre-wrap"
           }}>
             {m.text}
           </div>
