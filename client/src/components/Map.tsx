@@ -29,6 +29,10 @@ function loadMapScript(): Promise<void> {
   if (typeof window !== "undefined" && window.google?.maps) return Promise.resolve();
   if (mapsScriptPromise) return mapsScriptPromise;
 
+  if (!API_KEY || API_KEY === "undefined") {
+    return Promise.reject(new Error("Google Maps proxy API key is not configured"));
+  }
+
   mapsScriptPromise = new Promise<void>((resolve, reject) => {
     const script = document.createElement("script");
     script.src = `${MAPS_PROXY_URL}/maps/api/js?key=${API_KEY}&v=weekly&libraries=marker,places,geocoding,geometry,routes`;
@@ -90,7 +94,7 @@ export function MapView({
       });
       onMapReady?.(map.current);
     } catch (error) {
-      console.error("Interactive map could not be initialized", error);
+      console.warn("Interactive map unavailable; showing fallback", error);
       setMapError(true);
     }
   });
