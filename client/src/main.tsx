@@ -8,6 +8,23 @@ import App from "./App";
 import { startLogin } from "./const";
 import "./index.css";
 
+const analyticsEndpoint = String(import.meta.env.VITE_ANALYTICS_ENDPOINT ?? "").trim().replace(/\/+$/, "");
+const analyticsWebsiteId = String(import.meta.env.VITE_ANALYTICS_WEBSITE_ID ?? "").trim();
+if (analyticsEndpoint && analyticsWebsiteId) {
+  try {
+    const endpoint = new URL(analyticsEndpoint);
+    if (endpoint.protocol === "https:" || (endpoint.protocol === "http:" && endpoint.hostname === "localhost")) {
+      const analyticsScript = document.createElement("script");
+      analyticsScript.defer = true;
+      analyticsScript.src = `${analyticsEndpoint}/umami`;
+      analyticsScript.dataset.websiteId = analyticsWebsiteId;
+      document.head.appendChild(analyticsScript);
+    }
+  } catch {
+    // Analytics is optional; an invalid endpoint must not block app startup.
+  }
+}
+
 const queryClient = new QueryClient();
 
 const redirectToLoginIfUnauthorized = (error: unknown) => {
