@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { ExternalLink, Filter, MapPin, Navigation, Search, Sparkles, X } from "lucide-react";
 import { MapView } from "@/components/Map";
 
@@ -17,6 +18,16 @@ type MapDestination = {
 };
 
 const destinations: MapDestination[] = [
+  { name: "يومرا", city: "يومرا", branch: "الساحل والخدمات", latin: "Yomra", category: "cities", label: "بلدة ساحلية", note: "منطقة ساحلية شرقي طرابزون تضم أحياء سكنية ومراكز تسوق ومطاعم.", query: "Yomra Trabzon Turkey", position: { lat: 40.956, lng: 39.855 } },
+  { name: "أرسين", city: "أرسين", branch: "الساحل والخدمات", latin: "Arsin", category: "cities", label: "ساحل البحر الأسود", note: "بلدة ساحلية شرقي طرابزون؛ تحقق من ساعات عمل الخدمات قبل التوجه.", query: "Arsin Trabzon Turkey", position: { lat: 40.952, lng: 39.93 } },
+  { name: "سورميني", city: "سورميني", branch: "الساحل والقرى", latin: "Sürmene", category: "cities", label: "بلدة ساحلية", note: "بلدة على ساحل البحر الأسود شرقي طرابزون، على الطريق باتجاه ريزا.", query: "Surmene Trabzon Turkey", position: { lat: 40.906, lng: 40.116 } },
+  { name: "أراكلي", city: "أراكلي", branch: "الساحل والقرى", latin: "Araklı", category: "cities", label: "ساحل وبلدة", note: "بلدة ساحلية شرقي طرابزون ضمن مسار الطريق الساحلي إلى ريزا.", query: "Arakli Trabzon Turkey", position: { lat: 40.939, lng: 40.058 } },
+  { name: "واجهة كاشستوس البحرية", city: "يومرا", branch: "الساحل والخدمات", latin: "Kaşüstü Waterfront", category: "family", label: "واجهة بحرية", note: "منطقة ساحلية قرب يومرا؛ تحقق من المداخل والخدمات المتاحة قبل الزيارة.", query: "Kasustu Yomra Trabzon Turkey", position: { lat: 40.958, lng: 39.856 } },
+  { name: "مركز جواهر طرابزون", city: "يومرا", branch: "الساحل والخدمات", latin: "Cevahir Outlet Trabzon", category: "family", label: "تسوق ومطاعم", note: "مركز تسوق في منطقة يومرا؛ تحقق من ساعات العمل والفعاليات قبل الانطلاق.", query: "Cevahir Outlet Trabzon Yomra Turkey", position: { lat: 40.957, lng: 39.862 } },
+  { name: "حديقة ساحل أرسين", city: "أرسين", branch: "الساحل والخدمات", latin: "Arsin Sahil Parkı", category: "family", label: "حديقة ساحلية", note: "مساحة ساحلية للتنزه؛ قد تتغير الخدمات المتاحة حسب الموسم والطقس.", query: "Arsin Sahil Parki Trabzon Turkey", position: { lat: 40.953, lng: 39.927 } },
+  { name: "مركز سورميني", city: "سورميني", branch: "الساحل والقرى", latin: "Sürmene Center", category: "cities", label: "أسواق وخدمات", note: "مركز البلدة على الطريق الساحلي؛ استخدم الخريطة للتحقق من الوجهة وساعات العمل.", query: "Surmene merkez Trabzon Turkey", position: { lat: 40.912, lng: 40.116 } },
+  { name: "محال سكاكين سورميني", city: "سورميني", branch: "الساحل والقرى", latin: "Sürmene Knife Shops", category: "culture", label: "حرف محلية وتسوق", note: "تشتهر سورميني بحرفة صناعة السكاكين؛ تحقق من المتجر ومواعيد العمل قبل الزيارة.", query: "Surmene bicak dukkanlari Turkey", position: { lat: 40.912, lng: 40.118 } },
+  { name: "شلالات أراكلي", city: "أراكلي", branch: "الساحل والقرى", latin: "Araklı Waterfalls", category: "nature", label: "طبيعة وشلالات", note: "وجهة طبيعية في ريف أراكلي؛ افحص حالة الطريق والطقس قبل الانطلاق.", query: "Arakli waterfalls Trabzon Turkey", position: { lat: 40.73, lng: 40.05 } },
   { name: "طرابزون", city: "طرابزون", branch: "المدينة والساحل", latin: "Trabzon", category: "cities", label: "مدينة ساحلية", note: "بوابة البحر الأسود والأسواق والمطاعم والميناء.", query: "Trabzon Turkey", position: { lat: 41.0053, lng: 39.7225 } },
   { name: "أوزنجول", city: "طرابزون", branch: "سلطان مراد · أوزنجول · ديمركابي", latin: "Uzungöl", category: "nature", label: "بحيرة وقرية", note: "بحيرة جبلية ومسارات هادئة وإطلالات لا تنسى.", query: "Uzungol Trabzon Turkey", position: { lat: 40.6197, lng: 40.2958 } },
   { name: "ريزا", city: "ريزا", branch: "المدينة والساحل", latin: "Rize", category: "cities", label: "مدينة الشاي", note: "مزارع الشاي والمرتفعات والهواء البحري.", query: "Rize Turkey", position: { lat: 41.0201, lng: 40.5234 } },
@@ -30,6 +41,29 @@ const destinations: MapDestination[] = [
   { name: "كومبيت", city: "جيرسون", branch: "المدينة والمرتفعات", latin: "Kümbet", category: "nature", label: "مرتفعات", note: "مرتفعات خضراء وهواء بارد ومسارات طبيعية.", query: "Kumbet Plateau Giresun Turkey", position: { lat: 40.65, lng: 38.35 } },
   { name: "أنقرة", city: "أنقرة", branch: "المدينة والمعالم", latin: "Ankara", category: "cities", label: "عاصمة وتاريخ", note: "العاصمة والمتاحف والقلعة والأسواق الحديثة.", query: "Ankara Turkey", position: { lat: 39.9334, lng: 32.8597 } },
   { name: "إسطنبول", city: "إسطنبول", branch: "المدينة والمعالم", latin: "Istanbul", category: "cities", label: "البوسفور", note: "البوسفور والمعالم التاريخية والأسواق العريقة.", query: "Istanbul Turkey", position: { lat: 41.0082, lng: 28.9784 } },
+  { name: "يالوا", city: "يالوا", branch: "المدينة والواجهة البحرية", latin: "Yalova", category: "cities", label: "مدينة ساحلية", note: "واجهة بحرية وحدائق ومقاهٍ على بحر مرمرة.", query: "Yalova Turkey", position: { lat: 40.655, lng: 29.276 } },
+  { name: "حمامات يالوا الحرارية", city: "يالوا", branch: "الطبيعة والاستجمام", latin: "Yalova Thermal Springs", category: "nature", label: "ينابيع حرارية", note: "منطقة ينابيع حرارية وحدائق خضراء؛ تحقق من ساعات العمل قبل الزيارة.", query: "Yalova Termal Kaplicalari Turkey", position: { lat: 40.606, lng: 29.17 } },
+  { name: "قصر يورويان كوشك", city: "يالوا", branch: "المدينة والتاريخ", latin: "Yuruyen Kosk", category: "culture", label: "معلم تاريخي", note: "قصر صغير معروف على الواجهة البحرية لمدينة يالوا.", query: "Yuruyen Kosk Yalova Turkey", position: { lat: 40.659, lng: 29.276 } },
+  { name: "شلال صودوشن", city: "يالوا", branch: "الطبيعة والاستجمام", latin: "Sudusen Waterfall", category: "nature", label: "شلال وغابة", note: "وجهة طبيعية في ريف يالوا؛ افحص حالة الطريق والطقس قبل الانطلاق.", query: "Sudusen Waterfall Yalova Turkey", position: { lat: 40.57, lng: 29.14 } },
+  { name: "صبنجا", city: "صبنجا", branch: "البحيرة والواجهة", latin: "Sapanca", category: "cities", label: "بحيرة ومدينة", note: "بحيرة شهيرة للتنزه والمقاهي والإقامة الهادئة.", query: "Sapanca Lake Sakarya Turkey", position: { lat: 40.691, lng: 30.267 } },
+  { name: "بحيرة صبنجة", city: "صبنجا", branch: "البحيرة والواجهة", latin: "Sapanca Lake", category: "nature", label: "بحيرة وممشى", note: "واجهة البحيرة مناسبة للتنزه والتصوير؛ تختلف الأنشطة حسب الموسم.", query: "Sapanca Lake Turkey", position: { lat: 40.701, lng: 30.25 } },
+  { name: "قرية معشوقية", city: "صبنجا", branch: "الطبيعة والمطاعم", latin: "Masukiye", category: "family", label: "قرية ومطاعم ريفية", note: "منطقة خضراء تشتهر بالمطاعم والرحلات القصيرة قرب كارتبه.", query: "Masukiye Kartepe Turkey", position: { lat: 40.69, lng: 30.14 } },
+  { name: "كارتبه", city: "كارتبه", branch: "المرتفعات والثلوج", latin: "Kartepe", category: "cities", label: "مرتفعات", note: "وجهة جبلية موسمية للمناظر الطبيعية والأنشطة الشتوية.", query: "Kartepe Kocaeli Turkey", position: { lat: 40.697, lng: 30.11 } },
+  { name: "قمة كارتبه", city: "كارتبه", branch: "المرتفعات والثلوج", latin: "Kartepe Summit", category: "nature", label: "قمة وإطلالات", note: "إطلالات جبلية؛ قد تتغير إمكانية الوصول وفق الطقس والموسم.", query: "Kartepe Ski Center Turkey", position: { lat: 40.70, lng: 30.08 } },
+  { name: "منتزه أورمانيا", city: "كارتبه", branch: "الطبيعة والعائلة", latin: "Ormanya", category: "family", label: "منتزه عائلي", note: "منتزه طبيعي واسع ومناسب للعائلات قرب كوجالي.", query: "Ormanya Natural Life Park Kocaeli Turkey", position: { lat: 40.70, lng: 30.03 } },
+  { name: "بورصة", city: "بورصة", branch: "المدينة والأسواق", latin: "Bursa", category: "cities", label: "مدينة تاريخية", note: "أسواق عثمانية ومعالم تاريخية وبوابة إلى جبل أولوداغ.", query: "Bursa Turkey", position: { lat: 40.195, lng: 29.06 } },
+  { name: "الجامع الكبير في بورصة", city: "بورصة", branch: "التاريخ والأسواق", latin: "Bursa Grand Mosque", category: "culture", label: "جامع تاريخي", note: "من أبرز معالم بورصة التاريخية في مركز المدينة.", query: "Bursa Ulu Cami Turkey", position: { lat: 40.184, lng: 29.061 } },
+  { name: "خان الحرير كوزا هان", city: "بورصة", branch: "التاريخ والأسواق", latin: "Koza Han", category: "culture", label: "سوق تاريخي", note: "خان تاريخي معروف بالتسوق والمنتجات الحريرية.", query: "Koza Han Bursa Turkey", position: { lat: 40.184, lng: 29.063 } },
+  { name: "جبل أولوداغ", city: "بورصة", branch: "الجبال والتلفريك", latin: "Uludag", category: "nature", label: "جبل وتلفريك", note: "وجهة جبلية للمناظر والأنشطة الموسمية؛ تحقق من حالة التلفريك والطقس.", query: "Uludag National Park Bursa Turkey", position: { lat: 40.07, lng: 29.22 } },
+  { name: "ساكاريا", city: "ساكاريا", branch: "المدينة والطبيعة", latin: "Sakarya", category: "cities", label: "مدينة وريف", note: "مدينة ومحيط طبيعي يضم بحيرات وحدائق ووجهات ريفية.", query: "Adapazari Sakarya Turkey", position: { lat: 40.773, lng: 30.403 } },
+  { name: "بحيرة بويرازلار", city: "ساكاريا", branch: "المدينة والطبيعة", latin: "Poyrazlar Lake", category: "nature", label: "بحيرة وحديقة طبيعية", note: "منطقة طبيعية للتنزه والتصوير قرب ساكاريا.", query: "Poyrazlar Golu Sakarya Turkey", position: { lat: 40.84, lng: 30.43 } },
+  { name: "جسر جوستينيانوس", city: "ساكاريا", branch: "التاريخ والمعالم", latin: "Justinian Bridge", category: "culture", label: "جسر تاريخي", note: "جسر تاريخي أثري في محيط ساكاريا.", query: "Sangarius Bridge Sakarya Turkey", position: { lat: 40.76, lng: 30.35 } },
+  { name: "إزميت", city: "إزميت", branch: "المدينة والواجهة البحرية", latin: "Izmit", category: "cities", label: "مدينة على خليج إزميت", note: "مركز حضري على بحر مرمرة مع واجهة بحرية ومتاحف وحدائق.", query: "Izmit Kocaeli Turkey", position: { lat: 40.766, lng: 29.916 } },
+  { name: "برج ساعة إزميت", city: "إزميت", branch: "التاريخ والواجهة البحرية", latin: "Izmit Clock Tower", category: "culture", label: "معلم تاريخي", note: "برج ساعة تاريخي يطل على منطقة الخليج.", query: "Izmit Clock Tower Turkey", position: { lat: 40.765, lng: 29.92 } },
+  { name: "حديقة سيكابارك", city: "إزميت", branch: "الطبيعة والعائلة", latin: "Sekapark", category: "family", label: "حديقة وممشى", note: "مساحات خضراء وممشى على الواجهة البحرية.", query: "Sekapark Izmit Turkey", position: { lat: 40.758, lng: 29.93 } },
+  { name: "أولاشلي", city: "أولاشلي", branch: "الساحل والقرى", latin: "Ulasli, Golcuk", category: "cities", label: "بلدة ساحلية", note: "منطقة ساحلية تابعة لغولجوك في ولاية كوجالي على خليج إزميت.", query: "Ulasli Golcuk Kocaeli Turkey", position: { lat: 40.694, lng: 29.75 } },
+  { name: "ساحل أولاشلي", city: "أولاشلي", branch: "الساحل والقرى", latin: "Ulasli Sahili", category: "nature", label: "واجهة بحرية", note: "واجهة ساحلية محلية للتنزه؛ تحقق من الخدمات المتاحة ميدانيًا.", query: "Ulasli Sahili Golcuk Turkey", position: { lat: 40.694, lng: 29.752 } },
+  { name: "دغرمندره", city: "أولاشلي", branch: "الساحل والقرى", latin: "Degirmendere", category: "family", label: "بلدة ساحلية قريبة", note: "واجهة بحرية ومقاهٍ في محيط غولجوك، مناسبة لإضافة محطة قريبة للرحلة.", query: "Degirmendere Golcuk Kocaeli Turkey", position: { lat: 40.712, lng: 29.78 } },
   { name: "باتومي", city: "جورجيا", branch: "المدينة والواجهة البحرية", latin: "Batumi", category: "cities", label: "ساحل جورجيا", note: "بوليفارد باتومي والحدائق والواجهة البحرية.", query: "Batumi Georgia", position: { lat: 41.6168, lng: 41.6367 } },
   { name: "مرتفعات يومرا", city: "طرابزون", branch: "مرتفعات يومرا", latin: "Yomra", category: "nature", label: "مرتفعات وإطلالات", note: "إطلالات بحرية ومرافق ترفيهية قريبة من طرابزون.", query: "Yomra Trabzon Turkey", position: { lat: 40.955, lng: 39.86 } },
   { name: "مرتفعات سلطان مراد", city: "طرابزون", branch: "سلطان مراد · أوزنجول · ديمركابي", latin: "Sultan Murat", category: "nature", label: "مرتفعات", note: "مروج جبلية وإطلالات موسمية لعشاق الطبيعة.", query: "Sultan Murat Plateau Trabzon Turkey", position: { lat: 40.74, lng: 40.18 } },
@@ -57,6 +91,14 @@ const destinations: MapDestination[] = [
   { name: "قلعة أنقرة", city: "أنقرة", branch: "التاريخ والمتاحف", latin: "Ankara Castle", category: "culture", label: "قلعة وتاريخ", note: "إطلالة تاريخية وأزقة وأسواق قديمة.", query: "Ankara Castle Turkey", position: { lat: 39.949, lng: 32.862 } },
   { name: "ضريح أتاتورك", city: "أنقرة", branch: "التاريخ والمتاحف", latin: "Anıtkabir", category: "culture", label: "معلم وطني", note: "أحد أشهر المعالم الوطنية في العاصمة.", query: "Anitkabir Ankara Turkey", position: { lat: 39.925, lng: 32.837 } },
   { name: "بحيرة إيمير", city: "أنقرة", branch: "الحدائق والبحيرات", latin: "Eymir Lake", category: "nature", label: "بحيرة وممشى", note: "بحيرة هادئة ومسارات للدراجات والتنزه.", query: "Eymir Lake Ankara Turkey", position: { lat: 39.822, lng: 32.800 } },
+  { name: "قصر طوب قابي", city: "إسطنبول", branch: "التاريخ والبوسفور", latin: "Topkapi Palace", category: "culture", label: "قصر ومتحف", note: "قصر عثماني تاريخي قريب من آيا صوفيا وحديقة غولهانه.", query: "Topkapi Palace Istanbul Turkey", position: { lat: 41.0115, lng: 28.9833 } },
+  { name: "صهريج البازيليك", city: "إسطنبول", branch: "التاريخ والبوسفور", latin: "Basilica Cistern", category: "culture", label: "معلم تاريخي تحت الأرض", note: "صهريج تاريخي مميز في منطقة السلطان أحمد.", query: "Basilica Cistern Istanbul Turkey", position: { lat: 41.0084, lng: 28.9779 } },
+  { name: "البازار الكبير", city: "إسطنبول", branch: "الأسواق والتسوق", latin: "Grand Bazaar", category: "cities", label: "سوق تاريخي", note: "سوق مسقوف واسع للهدايا والمنتجات التقليدية.", query: "Grand Bazaar Istanbul Turkey", position: { lat: 41.0107, lng: 28.9680 } },
+  { name: "ميدان تقسيم", city: "إسطنبول", branch: "الأسواق والتسوق", latin: "Taksim Square", category: "cities", label: "ساحة وشارع حيوي", note: "ساحة مركزية وبداية شارع الاستقلال للمشي والتسوق.", query: "Taksim Square Istanbul Turkey", position: { lat: 41.0370, lng: 28.9850 } },
+  { name: "مسجد أورتاكوي", city: "إسطنبول", branch: "البوسفور والإطلالات", latin: "Ortakoy Mosque", category: "culture", label: "مسجد على البوسفور", note: "واجهة تصوير شهيرة بجوار جسر البوسفور والمقاهي.", query: "Ortakoy Mosque Istanbul Turkey", position: { lat: 41.0470, lng: 29.0277 } },
+  { name: "تل تشاملجا", city: "إسطنبول", branch: "البوسفور والإطلالات", latin: "Camlica Hill", category: "nature", label: "إطلالة بانورامية", note: "إطلالة مرتفعة على أجزاء واسعة من إسطنبول والبوسفور.", query: "Camlica Hill Istanbul Turkey", position: { lat: 41.0256, lng: 29.0686 } },
+  { name: "تلة بيير لوتي", city: "إسطنبول", branch: "البوسفور والإطلالات", latin: "Pierre Loti Hill", category: "family", label: "مقهى وإطلالة", note: "إطلالة على القرن الذهبي مع إمكانية الوصول بالتلفريك.", query: "Pierre Loti Hill Istanbul Turkey", position: { lat: 41.0545, lng: 28.9330 } },
+  { name: "ميني تورك", city: "إسطنبول", branch: "العائلة والترفيه", latin: "Miniaturk", category: "family", label: "حديقة مجسمات", note: "معالم تركيا المصغرة في مساحة مناسبة للنزهة العائلية.", query: "Miniaturk Istanbul Turkey", position: { lat: 41.0605, lng: 28.9497 } },
   { name: "آيا صوفيا", city: "إسطنبول", branch: "التاريخ والبوسفور", latin: "Hagia Sophia", category: "culture", label: "معلم تاريخي", note: "معلم عالمي في قلب المنطقة التاريخية.", query: "Hagia Sophia Istanbul Turkey", position: { lat: 41.0086, lng: 28.9802 } },
   { name: "جامع السلطان أحمد", city: "إسطنبول", branch: "التاريخ والبوسفور", latin: "Blue Mosque", category: "culture", label: "جامع تاريخي", note: "جامع تاريخي مميز في قلب السلطان أحمد.", query: "Blue Mosque Sultanahmet Istanbul Turkey", position: { lat: 41.0054, lng: 28.9768 } },
   { name: "برج غلطة", city: "إسطنبول", branch: "التاريخ والبوسفور", latin: "Galata Tower", category: "culture", label: "إطلالة بانورامية", note: "إطلالة بانورامية على القرن الذهبي والبوسفور.", query: "Galata Tower Istanbul Turkey", position: { lat: 41.0256, lng: 28.9741 } },
@@ -90,12 +132,13 @@ const categoryColor: Record<MapDestination["category"], string> = {
 export function InteractiveNorthMap() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<MapCategory>("all");
-  const [selectedCity, setSelectedCity] = useState<string | null>(null);
+  const [selectedCity, setSelectedCity] = useState<string | null>("طرابزون");
   const [selected, setSelected] = useState<MapDestination | null>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const markersRef = useRef<Array<{ destination: MapDestination; marker: any }>>([]);
 
-  const cityNames = ["طرابزون", "ريزا", "أوردو", "سامسون", "جيرسون", "أنقرة", "إسطنبول", "جورجيا"];
+  const cityNames = ["طرابزون", "يومرا", "أرسين", "سورميني", "أراكلي", "ريزا", "أوردو", "سامسون", "جيرسون", "إسطنبول", "يالوا", "صبنجا", "كارتبه", "بورصة", "ساكاريا", "إزميت", "أولاشلي", "أنقرة", "جورجيا"];
 
   const visible = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase();
@@ -108,19 +151,87 @@ export function InteractiveNorthMap() {
   }, [filter, query, selectedCity]);
 
   const openDestination = (destination: MapDestination) => {
+    // Keep the selected place visible in the list as well as on the map.
+    setSelectedCity(destination.city);
+    setFilter(destination.category);
+    setQuery("");
     setSelected(destination);
     map?.panTo(destination.position);
-    map?.setZoom(10);
-    window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination.query)}`, "_blank", "noopener,noreferrer");
+    map?.setZoom(13);
     window.setTimeout(() => document.querySelector(".north-map-detail")?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 0);
   };
 
-  const directionsUrl = selected
-    ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(selected.query)}`
-    : "https://www.google.com/maps/search/Northern+Turkey";
+  // Keep map markers synchronized with the city, category, and text search.
+  // This avoids showing pins that are hidden from the destination list.
+  useEffect(() => {
+    if (!map || !selectedCity) return;
+    const normalized = query.trim().toLocaleLowerCase();
+    const cityPlaces = destinations.filter((item) => item.city === selectedCity);
+    markersRef.current.forEach(({ destination, marker }) => {
+      const matchesCity = destination.city === selectedCity;
+      const matchesCategory = filter === "all" || destination.category === filter;
+      const matchesQuery = !normalized || `${destination.name} ${destination.latin} ${destination.label}`.toLocaleLowerCase().includes(normalized);
+      const visible = matchesCity && matchesCategory && matchesQuery;
+      if ("setMap" in marker && typeof marker.setMap === "function") marker.setMap(visible ? map : null);
+      else marker.map = visible ? map : null;
+    });
+  }, [map, selectedCity, filter, query]);
 
-  return (
-    <div className={`north-map-experience ${expanded ? "north-map-expanded" : ""}`} dir="rtl">
+  // Move the camera only when the city changes, not when the visitor filters or searches.
+  // That way selecting a specific destination keeps its close-up view.
+  useEffect(() => {
+    if (!map || !selectedCity) return;
+    const cityPlaces = destinations.filter((item) => item.city === selectedCity);
+    if (cityPlaces.length === 0) return;
+    // Istanbul spans two continents; begin around the historic/central area.
+    if (selectedCity === "إسطنبول") {
+      map.panTo({ lat: 41.025, lng: 28.985 });
+      map.setZoom(10.5);
+      return;
+    }
+    if (cityPlaces.length === 1) {
+      map.panTo(cityPlaces[0].position);
+      map.setZoom(11);
+      return;
+    }
+    const bounds = new google.maps.LatLngBounds();
+    cityPlaces.forEach((place) => bounds.extend(place.position));
+    map.fitBounds(bounds, 64);
+    window.setTimeout(() => {
+      const currentZoom = map.getZoom() ?? 10;
+      if (currentZoom > 12) map.setZoom(12);
+    }, 100);
+  }, [map, selectedCity]);
+
+  useEffect(() => {
+    if (!expanded) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setExpanded(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [expanded]);
+
+  const directionsUrl = selected
+    ? `https://www.google.com/maps/dir/?api=1&destination=${selected.position.lat}%2C${selected.position.lng}&destination_place_id=&travelmode=driving`
+    : "https://www.google.com/maps/search/Northern+Turkey";
+  const selectedCityPlaces = destinations.filter((item) => item.city === selectedCity);
+  const fallbackCenter = selected?.position ?? (selectedCityPlaces.length
+    ? {
+        lat: selectedCityPlaces.reduce((sum, item) => sum + item.position.lat, 0) / selectedCityPlaces.length,
+        lng: selectedCityPlaces.reduce((sum, item) => sum + item.position.lng, 0) / selectedCityPlaces.length,
+      }
+    : { lat: 41.0053, lng: 39.7225 });
+  const broadRegion = ["إسطنبول", "يالوا", "صبنجا", "كارتبه", "بورصة", "ساكاريا", "إزميت", "أولاشلي", "أنقرة", "جورجيا"].includes(selectedCity ?? "");
+  const fallbackZoom = selected ? 13 : broadRegion ? 9 : 10;
+
+  const mapWorkspace = (
+    <div className={`north-map-experience ${expanded ? "north-map-expanded" : ""}`} dir="rtl" role={expanded ? "dialog" : undefined} aria-modal={expanded ? true : undefined} aria-label={expanded ? "الخريطة التفاعلية بالحجم الكامل" : undefined}>
       <div className="north-map-view-actions">
         {!expanded ? <button type="button" className="north-map-expand" onClick={() => setExpanded(true)}><ExternalLink size={16} /> فتح الخريطة بحجم كامل</button> : <button type="button" className="north-map-close" onClick={() => setExpanded(false)}><X size={17} /> إغلاق الخريطة</button>}
       </div>
@@ -157,18 +268,17 @@ export function InteractiveNorthMap() {
         </aside>
 
         <div className="north-map-canvas-wrap">
-          <MapView className="north-map-canvas" initialCenter={{ lat: 40.95, lng: 39.25 }} initialZoom={8} onMapReady={(readyMap) => {
+          <MapView className="north-map-canvas" initialCenter={{ lat: 41.0053, lng: 39.7225 }} initialZoom={10} fallbackCenter={fallbackCenter} fallbackZoom={fallbackZoom} fallbackLabel={selected?.name ?? selectedCity ?? "الشمال التركي"} onMapReady={(readyMap) => {
             setMap(readyMap);
-            const bounds = new google.maps.LatLngBounds();
-            destinations.forEach((destination) => bounds.extend(destination.position));
-            readyMap.fitBounds(bounds, 42);
+            markersRef.current = [];
             destinations.forEach((destination) => {
               const markerContent = Object.assign(document.createElement("button"), { className: "north-map-marker", type: "button", ariaLabel: `فتح ${destination.name}`, innerHTML: `<span style="background:${categoryColor[destination.category]}"></span><b>${destination.name}</b>` });
               try {
                 const marker = google.maps.marker?.AdvancedMarkerElement
-                  ? new google.maps.marker.AdvancedMarkerElement({ map: readyMap, position: destination.position, title: destination.name, content: markerContent })
-                  : new google.maps.Marker({ map: readyMap, position: destination.position, title: destination.name });
+                  ? new google.maps.marker.AdvancedMarkerElement({ map: null, position: destination.position, title: destination.name, content: markerContent })
+                  : new google.maps.Marker({ map: null, position: destination.position, title: destination.name });
                 marker.addListener("click", () => openDestination(destination));
+                markersRef.current.push({ destination, marker });
               } catch (error) {
                 console.warn("Map marker unavailable; the destination list remains interactive.", error);
               }
@@ -184,6 +294,8 @@ export function InteractiveNorthMap() {
       </div>}
     </div>
   );
+
+  return expanded ? createPortal(mapWorkspace, document.body) : mapWorkspace;
 }
 
 export default InteractiveNorthMap;

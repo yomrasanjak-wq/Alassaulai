@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import React from "react";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { mutateAsyncMock, auxiliaryMutationMock } = vi.hoisted(() => ({ mutateAsyncMock: vi.fn(), auxiliaryMutationMock: vi.fn() }));
@@ -49,6 +49,7 @@ function chatProps(overrides: Partial<React.ComponentProps<typeof ChatComposer>>
     voiceSupported: true,
     isLoading: false,
     placeholder: "اكتب سؤالك",
+    onImageSelected: vi.fn(),
     ...overrides,
   };
 }
@@ -61,7 +62,7 @@ describe("Home voice-to-chat flow", () => {
     interimResults = false;
     onstart?: () => void;
     onerror?: (event: { error?: string }) => void;
-    onresult?: (event: { results: ArrayLike<{ [key: number]: { transcript?: string } }> }) => void;
+    onresult?: (event: { results: ArrayLike<{ [key: number]: { transcript?: string }; isFinal?: boolean }> }) => void;
     onend?: () => void;
 
     constructor() {
@@ -70,6 +71,10 @@ describe("Home voice-to-chat flow", () => {
 
     start() {
       this.onstart?.();
+    }
+
+    stop() {
+      this.onend?.();
     }
   }
 
@@ -87,9 +92,21 @@ describe("Home voice-to-chat flow", () => {
       fireEvent.click(screen.getByRole("button", { name: "voice" }));
       const recognition = FakeSpeechRecognition.current;
       expect(recognition?.lang).toBe("ar-SA");
+      expect(recognition?.continuous).toBe(true);
+      expect(recognition?.interimResults).toBe(true);
       recognition?.onresult?.({
-        results: [[{ transcript: "ما أفضل برنامج في طرابزون؟" }]] as unknown as ArrayLike<{ [key: number]: { transcript?: string } }>,
+        results: [{ 0: { transcript: "ما أفضل برنامج في طرابزون؟" }, isFinal: false }],
       });
+      expect(mutateAsyncMock).not.toHaveBeenCalled();
+      recognition?.onresult?.({
+        results: [{ 0: { transcript: "ما أفضل برنامج في طرابزون؟" }, isFinal: true }],
+      });
+      // Speech engines may repeat the same full results list across events; do not append it twice.
+      recognition?.onresult?.({
+        results: [{ 0: { transcript: "ما أفضل برنامج في طرابزون؟" }, isFinal: true }],
+      });
+      expect(mutateAsyncMock).not.toHaveBeenCalled();
+      recognition?.stop();
 
       await waitFor(() => expect(mutateAsyncMock).toHaveBeenCalledOnce());
       const request = mutateAsyncMock.mock.calls[0]?.[0] as { messages: Array<{ role: string; content: string }> };
@@ -99,6 +116,18 @@ describe("Home voice-to-chat flow", () => {
       Object.defineProperty(window, "SpeechRecognition", { configurable: true, value: previousRecognition });
       FakeSpeechRecognition.current = undefined;
     }
+  });
+
+  it("shows a provider failure as an error notification rather than a success", async () => {
+    const failureMessage = "تعذر الاتصال بمزود الذكاء الاصطناعي؛ أعد المحاولة لاحقاً.";
+    mutateAsyncMock.mockResolvedValue({ text: failureMessage, errorCode: "unavailable" });
+    render(<Home />);
+    fireEvent.click(screen.getByRole("button", { name: "chat" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "سؤال المساعد" }), { target: { value: "سؤال اختبار جديد" } });
+    fireEvent.click(screen.getByRole("button", { name: "إرسال" }));
+    await waitFor(() => expect(screen.getByText("تعذر الحصول على إجابة من النموذج")).toBeTruthy());
+    expect(screen.queryByText("وصل رد المساعد")).toBeNull();
+    expect(screen.getAllByText(failureMessage).length).toBeGreaterThan(0);
   });
 });
 
@@ -183,6 +212,16 @@ describe("City card imagery", () => {
 });
 
 describe("ChatComposer UI", () => {
+  it("offers a camera/image attachment control", () => {
+    const props = chatProps();
+    render(<ChatComposer {...props} />);
+    const input = screen.getByLabelText("التقاط صورة أو اختيار صورة") as HTMLInputElement;
+    expect(input.accept).toBe("image/*");
+    expect(input.getAttribute("capture")).toBe("environment");
+    const file = new File(["fake-image"], "photo.jpg", { type: "image/jpeg" });
+    fireEvent.change(input, { target: { files: [file] } });
+    expect(props.onImageSelected).toHaveBeenCalledWith(file);
+  });
   it("sends text and disables voice when the browser lacks support", () => {
     const props = chatProps({ value: "ما أفضل مدينة؟", voiceSupported: false });
     render(<ChatComposer {...props} />);
@@ -555,14 +594,46 @@ describe("City and place detail actions", () => {
   });
 });
 
+describe("Destination photo book", () => {
+  it("keeps page navigation visible in a body portal and closes cleanly with Escape", () => {
+    render(<Home />);
+    fireEvent.click(screen.getByRole("button", { name: "افتح دفتر صور الشمال التركي" }));
+    const dialog = screen.getByRole("dialog", { name: "دفتر صور الشمال التركي" });
+    expect(document.body.contains(dialog)).toBe(true);
+    expect(document.body.style.overflow).toBe("hidden");
+    const previous = within(dialog).getByRole("button", { name: /الصفحة السابقة/ }) as HTMLButtonElement;
+    const next = within(dialog).getByRole("button", { name: /الصفحة التالية/ });
+    expect(previous.disabled).toBe(true);
+    fireEvent.click(next);
+    expect(within(dialog).getByText("2 / 41")).toBeTruthy();
+    expect(previous.disabled).toBe(false);
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByRole("dialog", { name: "دفتر صور الشمال التركي" })).toBeNull();
+    expect(document.body.style.overflow).not.toBe("hidden");
+  });
+});
+
 describe("Interactive north map", () => {
   it("opens the map as a full-screen mobile workspace with one map search", () => {
     const { container } = render(<InteractiveNorthMap />);
     expect(screen.getAllByRole("textbox", { name: "ابحث في الخريطة" })).toHaveLength(1);
     fireEvent.click(screen.getByRole("button", { name: /فتح الخريطة بحجم كامل/ }));
-    expect(container.querySelector(".north-map-expanded")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: /إغلاق الخريطة/ }));
-    expect(container.querySelector(".north-map-expanded")).toBeNull();
+    expect(document.body.querySelector(".north-map-expanded")).toBeTruthy();
+    expect(screen.getByRole("dialog", { name: "الخريطة التفاعلية بالحجم الكامل" })).toBeTruthy();
+    expect(document.body.style.overflow).toBe("hidden");
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(document.body.querySelector(".north-map-expanded")).toBeNull();
+    expect(document.body.style.overflow).not.toBe("hidden");
+    expect(container.querySelector(".north-map-experience")).toBeTruthy();
+  });
+
+  it("includes the eastern Trabzon coastal towns in the city picker", () => {
+    render(<InteractiveNorthMap />);
+    for (const city of ["يومرا", "أرسين", "سورميني", "أراكلي"]) {
+      fireEvent.click(screen.getByRole("tab", { name: city }));
+      expect(screen.getByText(new RegExp(`${city} · الوجهات`))).toBeTruthy();
+      expect(screen.getAllByRole("button", { name: /اختيار وجهة الخريطة رقم/ }).length).toBeGreaterThan(0);
+    }
   });
 
   it("filters destinations and selects a destination when its map control is pressed", () => {

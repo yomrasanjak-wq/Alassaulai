@@ -4,6 +4,7 @@
  * asymmetric content columns, concise operational statuses, and calm motion.
  */
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { trpc } from "@/lib/trpc";
 import { ChatComposer } from "@/components/ChatComposer";
 import { AssistantReply, type VoiceGender } from "@/components/AssistantReply";
@@ -24,9 +25,12 @@ import {
   ArrowLeft,
   ArrowRight,
   Bell,
+  BookOpen,
   Bot,
   BriefcaseBusiness,
   Camera,
+  CarFront,
+  ClipboardCheck,
   Check,
   ChevronDown,
   CircleUserRound,
@@ -35,6 +39,7 @@ import {
   Compass,
   ExternalLink,
   Facebook,
+  Flame,
   Headphones,
   Heart,
   Image as ImageIcon,
@@ -50,6 +55,7 @@ import {
   Music2,
   Navigation,
   Pause,
+  Phone,
   Play,
   Search,
   Send,
@@ -62,6 +68,7 @@ import {
   TrainFront,
   Tv,
   UserRound,
+  Zap,
   UsersRound,
   Upload,
   Video,
@@ -70,32 +77,78 @@ import {
 } from "lucide-react";
 
 const ASSETS = {
-  hero: "/manus-storage/alassault-hero_3d308e15.jpg",
-  trabzon: "/manus-storage/trabzon-destination_fe7e6b5e.jpg",
-  ayder: "/manus-storage/ayder-destination_044ab126.jpg",
-  mark: "/manus-storage/alassaul-gold-logo-transparent_29a6ac5c.png",
-  officialRobot: "/manus-storage/alassault-official-robot_14d24e05.jpg",
+  hero: "/images/hero.webp",
+  trabzon: "/images/trabzon.webp",
+  ayder: "/images/ayder.webp",
+  mark: "/logo.png?gold-v2-20261014",
+  officialRobot: "/robot.png",
 };
+
+const DESTINATION_GALLERY = [
+  { name: "شاطئ قانيتا", region: "طرابزون", category: "طرابزون", image: "/images/black-sea-coast.webp", alt: "الساحل والبحر الأسود في شمال تركيا", query: "Ganita Sahili Trabzon" },
+  { name: "الحديقة النباتية", region: "طرابزون", category: "طرابزون", image: "/images/forest-waterfall.webp", alt: "طبيعة خضراء في شمال تركيا", query: "Trabzon Botanik Parkı" },
+  { name: "أكواريوم طرابزون", region: "طرابزون", category: "طرابزون", image: "/images/trabzon.webp", alt: "مشهد من طرابزون", query: "Trabzon Akvaryum" },
+  { name: "الميدان", region: "طرابزون", category: "طرابزون", image: "/images/modern-trabzon.webp", alt: "مشهد حضري من طرابزون", query: "Trabzon Meydan Parkı" },
+  { name: "بوزتبه والمطل", region: "طرابزون", category: "طرابزون", image: "/images/trabzon-lake.webp", alt: "إطلالة طبيعية من منطقة طرابزون", query: "Boztepe Trabzon seyir terası" },
+  { name: "قصر أتاتورك", region: "طرابزون", category: "طرابزون", image: "/images/trabzon.webp", alt: "طرابزون ومعالمها", query: "Atatürk Köşkü Trabzon" },
+  { name: "بحيرة سيرا", region: "أكشابات", category: "طرابزون", image: "/images/uzungol-scenery.webp", alt: "بحيرة وسط الطبيعة الخضراء", query: "Sera Gölü Trabzon" },
+  { name: "ممشى كاشوستو", region: "يومرا", category: "يومرا وكاشوستو", image: "/images/yomra.webp", alt: "ساحل يومرا في طرابزون", query: "Kaşüstü Sahil Yürüyüş Yolu Yomra" },
+  { name: "حديقة يومرا والميناء", region: "يومرا", category: "يومرا وكاشوستو", image: "/images/black-sea-coast.webp", alt: "الساحل والأنشطة البحرية", query: "Yomra Sahil Parkı Liman" },
+  { name: "مطعم الطائرة", region: "طريق يومرا", category: "يومرا وكاشوستو", image: "/images/trabzon.webp", alt: "منطقة طرابزون الساحلية", query: "Terminal Pide Uçak Cafe Restaurant Yomra" },
+  { name: "مطعم أوزديل وديكور الساحرات", region: "أوزديل، يومرا", category: "يومرا وكاشوستو", image: "/images/forest-waterfall.webp", alt: "طبيعة ومياه في شمال تركيا", query: "Cazılar Deresi Alabalık Tesisi Özdil Yomra" },
+  { name: "مرتفعات يومرا", region: "يومرا", category: "يومرا وكاشوستو", image: "/images/black-sea-valley.webp", alt: "مرتفعات ووديان خضراء", query: "Yomra Yaylası Trabzon" },
+  { name: "أوزنجول", region: "تشايكارا", category: "أوزنجول والمرتفعات", image: "/images/modern-uzungol.webp", alt: "بحيرة أوزنجول والجبال المحيطة", query: "Uzungöl Trabzon" },
+  { name: "مرتفعات ديمركابي", region: "تشايكارا", category: "أوزنجول والمرتفعات", image: "/images/black-sea-valley.webp", alt: "وادي جبلي أخضر في شمال تركيا", query: "Demirkapı Yaylası Çaykara" },
+  { name: "السلطان مراد", region: "تشايكارا", category: "أوزنجول والمرتفعات", image: "/images/hidir-nebi.webp", alt: "مراعي ومرتفعات شمال تركيا", query: "Sultan Murat Yaylası Trabzon" },
+  { name: "حيدر نبي", region: "أكشابات", category: "أوزنجول والمرتفعات", image: "/images/hidir-nebi.webp", alt: "مرتفعات حيدر نبي", query: "Hıdırnebi Yaylası Trabzon" },
+  { name: "مغارة تشال", region: "دوزكوي", category: "أوزنجول والمرتفعات", image: "/images/forest-waterfall.webp", alt: "طبيعة شمال تركيا قرب الكهوف والوديان", query: "Çal Mağarası Trabzon" },
+  { name: "دير صوميلا", region: "ماتشكا", category: "طرابزون", image: "/images/modern-waterfall.webp", alt: "طبيعة جبلية وغابات في منطقة طرابزون", query: "Sümela Manastırı Trabzon" },
+  { name: "هامسي كوي وزيقانا", region: "ماتشكا", category: "أوزنجول والمرتفعات", image: "/images/modern-rize.webp", alt: "جبال خضراء ومرتفعات شمال تركيا", query: "Hamsiköy Zigana Trabzon" },
+  { name: "بحيرة مافي غول", region: "قيرسون", category: "أوردو وقيرسون", image: "/images/modern-giresun.webp", alt: "طبيعة قيرسون في شمال تركيا", query: "Mavi Göl Kuzalan Giresun" },
+  { name: "شاطئ أوردو وتلفريك بوزتبه", region: "أوردو", category: "أوردو وقيرسون", image: "/images/modern-ordu.webp", alt: "أوردو وساحل البحر الأسود", query: "Ordu Boztepe Teleferik" },
+  { name: "بيرشمبه وياسون بورنو", region: "أوردو", category: "أوردو وقيرسون", image: "/images/ordu.webp", alt: "الساحل في أوردو", query: "Yason Burnu Perşembe Ordu" },
+  { name: "ساحل غيرسون", region: "قيرسون", category: "أوردو وقيرسون", image: "/images/giresun.webp", alt: "ساحل قيرسون على البحر الأسود", query: "Giresun Sahil" },
+  { name: "قلعة ريزا وحدائق الشاي", region: "ريزا", category: "ريزا وآيدر", image: "/images/rize-nature.webp", alt: "الطبيعة ومزارع الشاي في ريزا", query: "Rize Kalesi çay bahçeleri" },
+  { name: "وادي فيرتينا وزيل قلعة", region: "ريزا", category: "ريزا وآيدر", image: "/images/firtina-river.webp", alt: "نهر فيرتينا بين الجبال الخضراء", query: "Fırtına Vadisi Zilkale Rize" },
+  { name: "مرتفعات آيدر", region: "ريزا", category: "ريزا وآيدر", image: "/images/modern-ayder.webp", alt: "مرتفعات آيدر الخضراء", query: "Ayder Yaylası Rize" },
+  { name: "شلالات الشمال التركي", region: "وجهات متعددة", category: "ريزا وآيدر", image: "/images/modern-waterfall.webp", alt: "شلال بين الغابات الخضراء", query: "Ağaran Şelalesi Rize" },
+  { name: "سامسون", region: "ساحل البحر الأسود", category: "أوردو وقيرسون", image: "/images/modern-samsun.webp", alt: "سامسون على البحر الأسود", query: "Samsun sahil" },
+  { name: "إسطنبول", region: "إسطنبول", category: "إسطنبول", image: "/images/modern-istanbul.webp", alt: "مشهد من إسطنبول", query: "Istanbul Turkey" },
+  { name: "تلفريك ومرتفعات بوزتبه", region: "أوردو", category: "أوردو وقيرسون", image: "/images/modern-ordu.webp", alt: "مناظر ساحلية وجبلية في أوردو", query: "Ordu Boztepe Teleferik" },
+  { name: "شاطئ فatsa وممشى البحر", region: "فاتسا، أوردو", category: "أوردو وقيرسون", image: "/images/ordu.webp", alt: "ساحل البحر الأسود في أوردو", query: "Fatsa sahil Ordu" },
+  { name: "شلال كوزالان", region: "قيرسون", category: "أوردو وقيرسون", image: "/images/modern-giresun.webp", alt: "طبيعة غابات ومياه في قيرسون", query: "Kuzalan Şelalesi Giresun" },
+  { name: "شاطئ أرسين", region: "أرسين، طرابزون", category: "الساحل الشرقي", image: "/images/black-sea-coast.webp", alt: "ساحل البحر الأسود", query: "Arsin Sahili Trabzon" },
+  { name: "سورميني وسوق السكاكين", region: "سورميني", category: "الساحل الشرقي", image: "/images/modern-trabzon.webp", alt: "مشهد من منطقة طرابزون", query: "Sürmene bıçakçılar çarşısı" },
+  { name: "مصانع الشاي في سورميني", region: "سورميني", category: "الساحل الشرقي", image: "/images/rize-nature.webp", alt: "مزارع الشاي في منطقة البحر الأسود", query: "Sürmene çay fabrikası" },
+  { name: "شلال أراكلي الكبير", region: "أراكلي، طرابزون", category: "الساحل الشرقي", image: "/images/modern-waterfall.webp", alt: "شلال بين الغابات الخضراء", query: "Araklı büyük şelale Trabzon" },
+  { name: "مدينة أوف وساحلها", region: "أوف، طرابزون", category: "الساحل الشرقي", image: "/images/black-sea-coast.webp", alt: "ساحل البحر الأسود", query: "Of Trabzon sahil" },
+  { name: "ممشى وحديقة إيوف", region: "قرب فوروم طرابزون", category: "طرابزون", image: "/images/modern-trabzon.webp", alt: "مدينة طرابزون ومرافقها", query: "EYOF Park Trabzon" },
+  { name: "منزلق الجبل في كاشوستو", region: "يومرا، كاشوستو", category: "يومرا وكاشوستو", image: "/images/yomra.webp", alt: "منطقة يومرا الساحلية والمرتفعات المحيطة", query: "Kaşüstü Yomra mountain luge" },
+  { name: "شلال آغاران", region: "تشايلي، ريزا", category: "ريزا وآيدر", image: "/images/modern-waterfall.webp", alt: "شلال ومياه بين الغابات", query: "Ağaran Şelalesi Çayeli Rize" },
+  { name: "قرية ياسون بورنو الساحلية", region: "بيرشمبه، أوردو", category: "أوردو وقيرسون", image: "/images/ordu.webp", alt: "مناظر ساحلية في أوردو", query: "Yason Burnu Perşembe Ordu" },
+] as const;
+
+const GALLERY_FILTERS = ["الكل", "طرابزون", "يومرا وكاشوستو", "أوزنجول والمرتفعات", "ريزا وآيدر", "أوردو وقيرسون", "الساحل الشرقي", "إسطنبول"] as const;
 
 const HERO_GALLERY_SETS = [
   {
-    main: "/manus-storage/modern-trabzon_5b018134.jpg",
+    main: "/images/modern-trabzon.webp",
     mainAlt: "جبال وساحل شمال تركيا",
     caption: "بين الغيم والبحر، يبدأ الطريق.",
     side: [
-      ["/manus-storage/modern-uzungol_6c33985e.jpg", "بحيرة أوزنجول", "بحيرات ومرتفعات"],
-      ["/manus-storage/modern-waterfall_67e18621.jpg", "شلالات الشمال التركي", "شلالات بين الغيم"],
-      ["/manus-storage/modern-rize_692c1535.jpg", "مرتفعات ريزا", "أنهار ووديان"],
+      ["/images/modern-uzungol.webp", "بحيرة أوزنجول", "بحيرات ومرتفعات"],
+      ["/images/modern-waterfall.webp", "شلالات الشمال التركي", "شلالات بين الغيم"],
+      ["/images/modern-rize.webp", "مرتفعات ريزا", "أنهار ووديان"],
     ],
   },
   {
-    main: "/manus-storage/modern-ayder_26a0dc22.jpg",
+    main: "/images/modern-ayder.webp",
     mainAlt: "مرتفعات آيدر الخضراء",
     caption: "هنا تصير الطبيعة وجهتك الأولى.",
     side: [
-      ["/manus-storage/modern-rize_692c1535.jpg", "نهر فِرتينا", "ماء يجري بين الجبال"],
-      ["/manus-storage/modern-uzungol_6c33985e.jpg", "أوزنجول", "قرية على ضفاف البحيرة"],
-      ["/manus-storage/modern-waterfall_67e18621.jpg", "شلالات خضراء", "صوت الماء والطبيعة"],
+      ["/images/modern-rize.webp", "نهر فِرتينا", "ماء يجري بين الجبال"],
+      ["/images/modern-uzungol.webp", "أوزنجول", "قرية على ضفاف البحيرة"],
+      ["/images/modern-waterfall.webp", "شلالات خضراء", "صوت الماء والطبيعة"],
     ],
   },
 ] as const;
@@ -145,7 +198,7 @@ const cities: City[] = [
     featured: [
       destination("همشِكوي", "قرى ومرتفعات", "Hamsikoy Trabzon Turkey", "وجهة جبلية محببة للسائح مع القرية والطبيعة ومذاقات المنطقة."),
       destination("حاجي مصطفى فوق همشِكوي", "مقاهٍ ومطاعم", "Haci Mustafa Hamsikoy Trabzon Turkey", "جلسة ومطعم معروف في طريق همشِكوي؛ يتحقق الزائر من ساعات العمل قبل الانطلاق."),
-      destination("أكبر وأحدث زحليقة في يومرا", "أنشطة ومغامرات", "Yomra longest slide Trabzon Turkey", "نشاط حديث في يومرا؛ يتحقق الزائر من التشغيل والموقع الدقيق قبل الزيارة."),
+      destination("أكبر وأحدث زحليقة في يومرا", "أنشطة ومغامرات", "Forapark Yomra Dağ Kızağı Merkezi Kaşüstü Trabzon Turkey", "فورابارك — زحليقة جبلية في كاشستوس؛ تشير بيانات البوابة إلى افتتاحها في 28 يوليو 2026 وطول مسار يقارب 850 متراً. تحقق من ساعات العمل والأسعار والتشغيل قبل الزيارة."),
     ],
     destinations: [
       destination("مغارة تشال", "أنشطة ومغامرات", "Cal Cave Trabzon Turkey", "مغارة طبيعية ومسار زيارة؛ يتحقق الزائر من ساعات الدخول وطبيعة الطريق."),
@@ -163,7 +216,7 @@ const cities: City[] = [
       destination("ممشى كاشستوس", "حدائق وشواطئ", "Kasustu coastal promenade Yomra Trabzon Turkey", "ممشى ساحلي في كاشستوس قرب يومرا."),
       destination("مرسى القوارب في يومرا", "أنشطة ومغامرات", "Yomra marina Trabzon Turkey", "مرسى وقوارب؛ تتحقق الرحلات البحرية من التشغيل والحجز مسبقاً."),
       destination("حديقة يومرا", "حدائق وشواطئ", "Yomra park Trabzon Turkey", "حديقة ومساحة عائلية قرب الساحل."),
-      destination("أكبر وأحدث زحليقة في يومرا", "أنشطة ومغامرات", "Yomra longest slide Trabzon Turkey", "نشاط ترفيهي حديث؛ يتحقق الزائر من الموقع الدقيق والتشغيل قبل الزيارة."),
+      destination("أكبر وأحدث زحليقة في يومرا", "أنشطة ومغامرات", "Forapark Yomra Dağ Kızağı Merkezi Kaşüstü Trabzon Turkey", "فورابارك — زحليقة جبلية في كاشستوس؛ تشير بيانات البوابة إلى افتتاحها في 28 يوليو 2026 وطول مسار يقارب 850 متراً. تحقق من ساعات العمل والأسعار والتشغيل قبل الزيارة."),
       destination("أوزنجول", "قرى ومرتفعات", "Uzungol Trabzon Turkey", "بحيرة وقرية ومرتفعات؛ مناسبة للمشي والتصوير والمبيت."),
       destination("مرتفعات حيدر نبي", "قرى ومرتفعات", "Hidirnebi Plateau Trabzon Turkey", "مرتفعات قريبة من طرابزون بإطلالة واسعة ومسارات طبيعية."),
       destination("يومرا", "قرى ومرتفعات", "Yomra Trabzon Turkey", "منطقة ساحلية شرق المركز، مناسبة للمطاعم والمقاهي والوصول السريع."),
@@ -222,7 +275,7 @@ const cities: City[] = [
     name: "أوردو",
     latin: "Ordu",
     region: "الساحل الأخضر",
-    image: "/manus-storage/ordu-city-card_89201cf5.jpg",
+    image: "/images/ordu.webp",
     icon: "03",
     intro: "تلفريك يفتح على البحر ومدينة تسير على مهل.",
     places: ["تلفريك أوردو", "مرتفعات بوزتبه", "بحيرة أولوجول", "كورنيش أوردو"],
@@ -244,7 +297,7 @@ const cities: City[] = [
     name: "سامسون",
     latin: "Samsun",
     region: "بوابة الشمال",
-    image: "/manus-storage/samsun-city-card_5e1f092c.jpg",
+    image: "/images/samsun.webp",
     icon: "04",
     intro: "كورنيش واسع، تاريخ حديث، ونبض مدينة ساحلية.",
     places: ["كورنيش أتاكوم", "متحف أتاتورك", "حديقة الشرق", "ساحة الجمهورية"],
@@ -266,7 +319,7 @@ const cities: City[] = [
     name: "جيرسون",
     latin: "Giresun",
     region: "الجزيرة الخضراء",
-    image: "/manus-storage/giresun-city-card_1c3f9d8e.jpg",
+    image: "/images/giresun.webp",
     icon: "05",
     intro: "مدينة صغيرة بطبيعة كثيفة وذاكرة بحرية عميقة.",
     places: ["قلعة جيرسون", "جزيرة جيرسون", "مرتفعات كومبيت", "شاطئ جيرسون"],
@@ -288,7 +341,7 @@ const cities: City[] = [
     name: "أنقرة",
     latin: "Ankara",
     region: "العاصمة",
-    image: "/manus-storage/ankara-city-card_b0898c2d.jpg",
+    image: "/images/ankara.webp",
     icon: "06",
     intro: "محطة العاصمة: متاحف، تاريخ، وشوارع تعطي الرحلة توازناً.",
     places: ["ضريح أتاتورك", "قلعة أنقرة", "متحف الحضارات", "برج أتاكولي", "ميدان كيزيلاي"],
@@ -311,7 +364,7 @@ const cities: City[] = [
     name: "إسطنبول",
     latin: "Istanbul",
     region: "بوابة الوصول",
-    image: "/manus-storage/istanbul-city-card_a8d8c53f.jpg",
+    image: "/images/istanbul.webp",
     icon: "07",
     intro: "البداية التي لا تشبه النهاية؛ البوسفور دائماً لديه قصة.",
     places: ["آيا صوفيا", "مسجد السلطان أحمد", "البوسفور", "قصر توب كابي", "جزر الأميرات"],
@@ -341,7 +394,7 @@ const cities: City[] = [
     name: "جورجيا",
     latin: "Georgia",
     region: "الامتداد القريب",
-    image: "/manus-storage/batumi-city-card_ddde7a34.jpg",
+    image: "/images/batumi.webp",
     icon: "08",
     intro: "باتومي على بُعد رحلة قصيرة من الساحل الشمالي.",
     places: ["باتومي بوليفارد", "تلفريك باتومي", "الساحة الأوروبية", "حديقة النباتات"],
@@ -368,7 +421,7 @@ const liveChannels = [
     title: "مكة المكرمة",
     subtitle: "المصدر الرسمي لقناة القرآن من مكة",
     color: "gold",
-    image: "/manus-storage/makkah-live_95f47b7d.jpg",
+    image: "/images/makkah-live.webp",
     video: "",
     sourceUrl: "https://www.youtube.com/channel/UCos52azQNBgW63_9uDJoPDA",
     sourceType: "official-page" as const,
@@ -378,7 +431,7 @@ const liveChannels = [
     title: "المدينة المنورة",
     subtitle: "المصدر الرسمي لقناة السنة النبوية من المدينة",
     color: "green",
-    image: "/manus-storage/madina-live_40412085.jpg",
+    image: "/images/madina-live.webp",
     video: "",
     sourceUrl: "https://www.youtube.com/@SaudiSunnahTv/streams",
     sourceType: "official-page" as const,
@@ -388,7 +441,7 @@ const liveChannels = [
     title: "قناة الحدث",
     subtitle: "المصدر الرسمي لقناة الحدث الإخبارية",
     color: "red",
-    image: "/manus-storage/hadath-live_712deed8.jpg",
+    image: "/images/hadath-live.webp",
     video: "",
     sourceUrl: "https://www.youtube.com/channel/UCrj5BGAhtWxDfqbza9T9hqA",
     sourceType: "official-page" as const,
@@ -474,7 +527,7 @@ const copy: Record<Language, Record<string, string>> = {
     controlDesc: "مسارات منفصلة للسكرتير، المعاونين، فريق IT، والـ CEO لمراجعة الطلبات والاحتياجات.",
     enterControl: "دخول غرفة التحكم",
     chatTitle: "مساعد ALASSAUL",
-    chatIntro: "اسألني عن مدينة، رحلة، مواقيت، أو طريق.",
+    chatIntro: "اسألني عن العالم والأخبار والعلوم والرحلات، أو التقط صورة لأساعدك في فهمها.",
     chatPlaceholder: "اكتب سؤالك هنا…",
     send: "إرسال",
     footer: "بوابة الشمال التركي — معرفة محلية، في إيقاع واحد.",
@@ -606,7 +659,29 @@ function StatusDot({ label, tone = "green" }: { label: string; tone?: "green" | 
   );
 }
 
-type ChatMessage = { from: "user" | "assistant"; text: string; route?: RouteRequest };
+type ChatMessage = { from: "user" | "assistant"; text: string; imageDataUrl?: string; route?: RouteRequest };
+
+type SpeechRecognitionResultLike = { [index: number]: { transcript?: string }; isFinal?: boolean };
+type SpeechRecognitionEventLike = { results?: ArrayLike<SpeechRecognitionResultLike> };
+type SpeechRecognitionLike = {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  start: () => void;
+  stop: () => void;
+  abort?: () => void;
+  onstart?: () => void;
+  onerror?: (event: { error?: string }) => void;
+  onresult?: (event: SpeechRecognitionEventLike) => void;
+  onend?: () => void;
+};
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
+
+function renderChatText(text: string) {
+  return text.split(/(https?:\/\/[^\s]+)/g).map((part, index) => /^https?:\/\//i.test(part)
+    ? <a key={`${index}-${part}`} href={part.replace(/[),.;]+$/, "")} target="_blank" rel="noreferrer" className="chat-inline-link">{part.replace(/[),.;]+$/, "")}</a>
+    : part);
+}
 
 type MemoryCard = { id: number; pair: string; label: string; flipped: boolean; matched: boolean };
 
@@ -632,6 +707,22 @@ export default function Home() {
   const [mobileMenu, setMobileMenu] = useState(false);
   const [search, setSearch] = useState("");
   const [selectedCity, setSelectedCity] = useState(cities[0]);
+  const [galleryFilter, setGalleryFilter] = useState<(typeof GALLERY_FILTERS)[number]>("الكل");
+  const [photoBookOpen, setPhotoBookOpen] = useState(false);
+  const [photoBookPage, setPhotoBookPage] = useState(0);
+  useEffect(() => {
+    if (!photoBookOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setPhotoBookOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [photoBookOpen]);
   const [activeSection, setActiveSection] = useState<"cities" | "live" | "map" | "partners" | "entertainment">("cities");
   const [modal, setModal] = useState<"login" | "live" | "camera" | "city" | "place" | "visitors" | "entertainment" | "control" | "map" | null>(null);
   const [discoveryOpen, setDiscoveryOpen] = useState(false);
@@ -643,14 +734,45 @@ export default function Home() {
   const [liveStatus, setLiveStatus] = useState<LiveStatus>("loading");
   const [chatOpen, setChatOpen] = useState(false);
   const [chatInput, setChatInput] = useState("");
+  const [chatImageDataUrl, setChatImageDataUrl] = useState<string | undefined>();
+  const [chatImageBusy, setChatImageBusy] = useState(false);
+  const [copiedTurkishPhrase, setCopiedTurkishPhrase] = useState<string>("");
   const [voiceGender, setVoiceGender] = useState<VoiceGender>(() => {
     if (typeof window === "undefined") return "male";
     return window.localStorage.getItem("alassault-voice-gender") === "female" ? "female" : "male";
   });
+  const copyTurkishPhrase = async (phrase: string) => {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(phrase);
+      } else {
+        const textarea = document.createElement("textarea");
+        textarea.value = phrase;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        const copied = document.execCommand("copy");
+        document.body.removeChild(textarea);
+        if (!copied) throw new Error("Clipboard unavailable");
+      }
+      setCopiedTurkishPhrase(phrase);
+      window.setTimeout(() => setCopiedTurkishPhrase((current) => current === phrase ? "" : current), 2200);
+    } catch {
+      setCopiedTurkishPhrase("تعذر النسخ — اضغط مطولًا على العبارة");
+    }
+  };
+
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     { from: "assistant", text: "أهلاً بك. أنا مساعد ALASSAUL — اسألني عن مدن الشمال أو رتّب ليومك القادم." },
   ]);
   const [isListening, setIsListening] = useState(false);
+  const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const speechIdleTimerRef = useRef<number | null>(null);
+  const speechFinalTranscriptRef = useRef("");
+  const speechSubmittedRef = useRef(false);
+  const speechFailedRef = useRef(false);
   const [cameraOn, setCameraOn] = useState(false);
   const [cameraMessage, setCameraMessage] = useState("");
   const cameraVideoRef = useRef<HTMLVideoElement>(null);
@@ -658,6 +780,12 @@ export default function Home() {
   const visitorImageInputRef = useRef<HTMLInputElement>(null);
   const entertainmentInputRef = useRef<HTMLInputElement>(null);
   const discoveryInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => () => {
+    if (speechIdleTimerRef.current !== null) window.clearTimeout(speechIdleTimerRef.current);
+    speechFailedRef.current = true;
+    speechRecognitionRef.current?.abort?.();
+    speechRecognitionRef.current = null;
+  }, []);
   const [visitorImage, setVisitorImage] = useState<string | null>(null);
   const [visitorFile, setVisitorFile] = useState<File | null>(null);
   const [visitorCaption, setVisitorCaption] = useState("");
@@ -689,16 +817,16 @@ export default function Home() {
       ? ["Allah'ım, Peygamberimiz Muhammed'e salât ve selâm eyle", "Sübhanallahi ve bihamdihi, Sübhanallahil azim", "Allah'ım, rahmet kapılarını bize aç", "Rabbim, göğsümü genişlet ve işimi kolaylaştır", "Allah'ım yolcuları koru ve onları selametle döndür"]
       : ["O Allah, send blessings and peace upon Prophet Muhammad", "Glory be to Allah and praise Him", "O Allah, open for us the doors of Your mercy", "My Lord, ease my heart and make my journey easy", "O Allah, protect travelers and return them safely"];
   const fallbackDiscoverySlides = [
-    { src: "/manus-storage/modern-trabzon_5b018134.jpg", alt: "جبال وساحل الشمال التركي", title: "بين الغيم والبحر", note: "الشمال التركي يبدأ من المشهد الأول." },
-    { src: "/manus-storage/modern-uzungol_6c33985e.jpg", alt: "بحيرة أوزنجول", title: "أوزنجول", note: "بحيرة وقرية ومرتفعات في يوم واحد." },
-    { src: "/manus-storage/modern-waterfall_67e18621.jpg", alt: "شلالات الشمال التركي", title: "شلالات بين الغيم", note: "طبيعة خضراء وماء لا ينقطع." },
-    { src: "/manus-storage/modern-rize_692c1535.jpg", alt: "مرتفعات ريزا", title: "ريزا", note: "وادي هادئ للرحلات والمغامرة." },
-    { src: "/manus-storage/modern-ayder_26a0dc22.jpg", alt: "مرتفعات آيدر", title: "آيدر", note: "مرتفعات خضراء وهواء بارد." },
-    { src: "/manus-storage/modern-giresun_708e9435.jpg", alt: "غيرسون", title: "غيرسون", note: "ساحل هادئ وطبيعة خضراء على البحر الأسود." },
-    { src: "/manus-storage/modern-ordu_c3cfc3f6.jpg", alt: "أوردو", title: "أوردو", note: "تلفريك وساحل واسع وإطلالة من بوزتبه." },
-    { src: "/manus-storage/modern-samsun_d76727ee.jpg", alt: "سامسون", title: "سامسون", note: "واجهة بحرية ومتنزهات ورحلات عائلية." },
-    { src: "/manus-storage/modern-istanbul_76b1898b.jpg", alt: "إسطنبول", title: "إسطنبول", note: "البوسفور، الأسواق، والتاريخ في مدينة واحدة." },
-    { src: "/manus-storage/modern-batumi_30577a97.jpg", alt: "باتومي جورجيا", title: "باتومي", note: "امتداد ساحلي قريب بحدائق وتلفريك وبحر." },
+    { src: "/images/modern-trabzon.webp", alt: "جبال وساحل الشمال التركي", title: "بين الغيم والبحر", note: "الشمال التركي يبدأ من المشهد الأول." },
+    { src: "/images/modern-uzungol.webp", alt: "بحيرة أوزنجول", title: "أوزنجول", note: "بحيرة وقرية ومرتفعات في يوم واحد." },
+    { src: "/images/modern-waterfall.webp", alt: "شلالات الشمال التركي", title: "شلالات بين الغيم", note: "طبيعة خضراء وماء لا ينقطع." },
+    { src: "/images/modern-rize.webp", alt: "مرتفعات ريزا", title: "ريزا", note: "وادي هادئ للرحلات والمغامرة." },
+    { src: "/images/modern-ayder.webp", alt: "مرتفعات آيدر", title: "آيدر", note: "مرتفعات خضراء وهواء بارد." },
+    { src: "/images/modern-giresun.webp", alt: "غيرسون", title: "غيرسون", note: "ساحل هادئ وطبيعة خضراء على البحر الأسود." },
+    { src: "/images/modern-ordu.webp", alt: "أوردو", title: "أوردو", note: "تلفريك وساحل واسع وإطلالة من بوزتبه." },
+    { src: "/images/modern-samsun.webp", alt: "سامسون", title: "سامسون", note: "واجهة بحرية ومتنزهات ورحلات عائلية." },
+    { src: "/images/modern-istanbul.webp", alt: "إسطنبول", title: "إسطنبول", note: "البوسفور، الأسواق، والتاريخ في مدينة واحدة." },
+    { src: "/images/modern-batumi.webp", alt: "باتومي جورجيا", title: "باتومي", note: "امتداد ساحلي قريب بحدائق وتلفريك وبحر." },
   ];
   const dir = language === "AR" ? "rtl" : "ltr";
   const season = getSeason();
@@ -724,12 +852,12 @@ export default function Home() {
   const speechRecognitionAvailable = typeof window !== "undefined" && Boolean((window as Window & { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }).SpeechRecognition || (window as Window & { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }).webkitSpeechRecognition);
   const discoveryWeek = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000));
   const freshDiscoverySlides = [
-    { src: "/manus-storage/trabzon-lake_75d86830.webp", alt: "بحيرة وقرى طرابزون الحديثة", title: "طرابزون بين البحيرة والغيم", note: "صورة جديدة من مشاهد البحر الأسود والطبيعة الخضراء." },
-    { src: "/manus-storage/black-sea-valley_a5f1c21c.jpg", alt: "وادي البحر الأسود", title: "وادي البحر الأسود", note: "طريق عائلي هادئ بين الجبال والمزارع." },
-    { src: "/manus-storage/forest-waterfall_0bb5941c.jpg", alt: "شلال في غابات الشمال التركي", title: "شلالات الغابة", note: "ماء وغابة ومنظر مناسب لاستراحة قصيرة." },
-    { src: "/manus-storage/uzungol-scenery_94203bd3.jpg", alt: "منظر حديث لأوزنجول", title: "أوزنجول من زاوية جديدة", note: "بحيرة ومرتفعات وقرية تستحق يوماً مستقلاً." },
-    { src: "/manus-storage/black-sea-coast_c85892b3.jpg", alt: "ساحل البحر الأسود", title: "ساحل البحر الأسود", note: "مشهد مفتوح لمحبي البحر والطرق الساحلية." },
-    { src: "/manus-storage/rize-nature_4eb4bb7c.jpg", alt: "طبيعة ريزا الخضراء", title: "ريزا الخضراء", note: "وديان وشلالات ومزارع شاي في رحلة واحدة." },
+    { src: "/images/trabzon-lake.webp", alt: "بحيرة وقرى طرابزون الحديثة", title: "طرابزون بين البحيرة والغيم", note: "صورة جديدة من مشاهد البحر الأسود والطبيعة الخضراء." },
+    { src: "/images/black-sea-valley.webp", alt: "وادي البحر الأسود", title: "وادي البحر الأسود", note: "طريق عائلي هادئ بين الجبال والمزارع." },
+    { src: "/images/forest-waterfall.webp", alt: "شلال في غابات الشمال التركي", title: "شلالات الغابة", note: "ماء وغابة ومنظر مناسب لاستراحة قصيرة." },
+    { src: "/images/uzungol-scenery.webp", alt: "منظر حديث لأوزنجول", title: "أوزنجول من زاوية جديدة", note: "بحيرة ومرتفعات وقرية تستحق يوماً مستقلاً." },
+    { src: "/images/black-sea-coast.webp", alt: "ساحل البحر الأسود", title: "ساحل البحر الأسود", note: "مشهد مفتوح لمحبي البحر والطرق الساحلية." },
+    { src: "/images/rize-nature.webp", alt: "طبيعة ريزا الخضراء", title: "ريزا الخضراء", note: "وديان وشلالات ومزارع شاي في رحلة واحدة." },
   ];
   const discoverySlides = useMemo(() => {
     const uploadedSlides = (discoveryItemsQuery.data ?? []).map((item) => ({
@@ -775,7 +903,7 @@ export default function Home() {
           ? [`نسّق فندقاً أو مطعماً قرب ${selectedCity.name}`, `هل يوجد تأجير سيارات قريب من ${selectedCity.name}؟`, `أخبرني عن شريك ${featuredPartner}`]
           : activeSection === "entertainment"
             ? ["اقترح موسيقى هادئة للطريق", "اختر لي لعبة خفيفة", "ما أفضل فيلم سفر قصير؟"]
-            : [`رتب لي برنامجاً في ${selectedCity.name}`, `ما أقرب الأماكن المهمة في ${selectedCity.name}؟`, "افتح لي أفضل بث أو خريطة الآن"]
+            : [`رتب لي برنامجاً في ${selectedCity.name}`, "ما أبرز أخبار العالم اليوم؟", "التقط صورة وساعدني في معرفة ما فيها"]
     : language === "TR"
       ? activeSection === "live"
         ? [`${selectedCity.latin} canlı yayınını aç`, "Şu an hangi kanallar canlı?", "Mekke, Medine ve Haber kanalları arasındaki fark nedir?"]
@@ -894,20 +1022,71 @@ export default function Home() {
     setLiveStatus((status) => status === "stopped" ? "loading" : "stopped");
   }
 
-  async function askAssistant(value: string) {
+  async function prepareChatImage(file?: File) {
+    if (!file) { setChatImageDataUrl(undefined); return; }
+    if (!file.type.startsWith("image/")) {
+      notify("نوع الملف غير مدعوم", "اختر صورة بصيغة JPG أو PNG أو WEBP.", "error");
+      return;
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      notify("الصورة كبيرة جداً", "اختر صورة أصغر من 15 ميغابايت.", "error");
+      return;
+    }
+    setChatImageBusy(true);
+    try {
+      const source = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("تعذر قراءة الصورة"));
+        reader.onerror = () => reject(new Error("تعذر قراءة الصورة"));
+        reader.readAsDataURL(file);
+      });
+      const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const element = new window.Image();
+        element.onload = () => resolve(element);
+        element.onerror = () => reject(new Error("تعذر فتح الصورة"));
+        element.src = source;
+      });
+      const scale = Math.min(1, 1280 / Math.max(image.naturalWidth, image.naturalHeight));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+      canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("تعذر تجهيز الصورة");
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      const compressed = canvas.toDataURL("image/jpeg", 0.78);
+      if (compressed.length > 4_500_000) throw new Error("الصورة ما زالت كبيرة؛ اختر صورة أصغر.");
+      setChatImageDataUrl(compressed);
+    } catch (error) {
+      notify("تعذر تجهيز الصورة", error instanceof Error ? error.message : "جرّب صورة أخرى.", "error");
+    } finally {
+      setChatImageBusy(false);
+    }
+  }
+
+  async function askAssistant(value: string, attachedImage?: string) {
     const trimmed = value.trim();
-    if (!trimmed || chatMutation.isPending) return;
+    if ((!trimmed && !attachedImage) || chatMutation.isPending || chatImageBusy) return;
+    const userText = trimmed || "حلّل الصورة المرفقة واشرح لي ما يظهر فيها.";
     const routeRequest = parseRouteRequest(trimmed) ?? undefined;
-    const nextMessages: ChatMessage[] = [...chatMessages, { from: "user", text: trimmed }];
+    const nextMessages: ChatMessage[] = [...chatMessages, { from: "user", text: userText, imageDataUrl: attachedImage }];
     setChatMessages(nextMessages);
     setChatInput("");
+    setChatImageDataUrl(undefined);
     try {
       const response = await chatMutation.mutateAsync({
         language,
-        messages: nextMessages.map((message) => ({ role: message.from as "user" | "assistant", content: message.text })),
+        messages: nextMessages.map((message, index) => ({
+          role: message.from as "user" | "assistant",
+          content: message.text,
+          ...(index === nextMessages.length - 1 && message.imageDataUrl ? { imageDataUrl: message.imageDataUrl } : {}),
+        })),
       });
       setChatMessages((messages) => [...messages, { from: "assistant", text: response.text, route: routeRequest }]);
-      notify("وصل رد المساعد", "يمكنك متابعة الإجابة أو فتح الخريطة إذا كان السؤال عن طريق.", "success");
+      if ("errorCode" in response) {
+        notify("تعذر الحصول على إجابة من النموذج", response.text, "error");
+      } else {
+        notify("وصل رد المساعد", "يمكنك متابعة الإجابة أو فتح الخريطة إذا كان السؤال عن طريق.", "success");
+      }
     } catch (error) {
       console.error("[ALASSAUL chat] request failed", error);
       setChatMessages((messages) => [...messages, { from: "assistant", text: getChatErrorMessage(error) }]);
@@ -916,42 +1095,78 @@ export default function Home() {
   }
 
   function sendChat() {
-    void askAssistant(chatInput);
+    void askAssistant(chatInput, chatImageDataUrl);
   }
 
   function startVoice() {
-    type RecognitionResult = { [key: number]: { transcript?: string } };
-    type RecognitionEvent = { results?: { [key: number]: RecognitionResult; length: number } };
-    type Recognition = new () => { lang: string; continuous: boolean; interimResults: boolean; start: () => void; onstart: () => void; onerror: (event: { error?: string }) => void; onresult: (event: RecognitionEvent) => void; onend: () => void };
-    const speechWindow = window as Window & { SpeechRecognition?: Recognition; webkitSpeechRecognition?: Recognition };
+    const activeRecognition = speechRecognitionRef.current;
+    if (activeRecognition) {
+      if (speechIdleTimerRef.current !== null) window.clearTimeout(speechIdleTimerRef.current);
+      speechIdleTimerRef.current = null;
+      try {
+        activeRecognition.stop();
+      } catch (error) {
+        console.warn("[ALASSAUL speech] could not stop recognition", error);
+      }
+      return;
+    }
+
+    const speechWindow = window as Window & { SpeechRecognition?: SpeechRecognitionConstructor; webkitSpeechRecognition?: SpeechRecognitionConstructor };
     const SpeechRecognition = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
     if (!SpeechRecognition) {
       setChatMessages((messages) => [...messages, { from: "assistant", text: "التعرف الصوتي العربي يحتاج متصفحاً يدعم Speech Recognition. يمكنك الكتابة الآن، أو فتح المنصة في Chrome أو Edge." }]);
       return;
     }
     const recognition = new SpeechRecognition();
+    speechRecognitionRef.current = recognition;
+    speechFinalTranscriptRef.current = "";
+    speechSubmittedRef.current = false;
+    speechFailedRef.current = false;
     recognition.lang = language === "AR" ? "ar-SA" : language === "TR" ? "tr-TR" : "en-US";
-    recognition.continuous = false;
-    recognition.interimResults = false;
+    recognition.continuous = true;
+    recognition.interimResults = true;
     recognition.onstart = () => setIsListening(true);
     recognition.onerror = (event) => {
+      speechFailedRef.current = true;
+      if (speechIdleTimerRef.current !== null) window.clearTimeout(speechIdleTimerRef.current);
+      speechIdleTimerRef.current = null;
+      if (speechRecognitionRef.current === recognition) speechRecognitionRef.current = null;
       setIsListening(false);
       const errorMessage = getMicrophoneErrorMessage(event.error);
       setChatMessages((messages) => [...messages, { from: "assistant", text: errorMessage }]);
     };
     recognition.onresult = (event) => {
-      const transcript = getSpeechTranscript(event.results);
-      if (!transcript) {
-        setChatMessages((messages) => [...messages, { from: "assistant", text: "لم يصلني نص السؤال. تحدث بوضوح بعد ظهور حالة الاستماع ثم حاول مرة أخرى." }]);
-        return;
+      const completeTranscript = getSpeechTranscript(event.results);
+      const finalTranscript = getSpeechTranscript(event.results, true);
+      speechFinalTranscriptRef.current = finalTranscript;
+      if (completeTranscript) {
+        // The browser exposes the current full result list on each event. Re-read it
+        // instead of appending event fragments, which can duplicate recognized words.
+        setChatInput(completeTranscript);
+        if (speechIdleTimerRef.current !== null) window.clearTimeout(speechIdleTimerRef.current);
+        speechIdleTimerRef.current = window.setTimeout(() => {
+          if (speechRecognitionRef.current === recognition) recognition.stop();
+        }, 1400);
       }
-      setChatInput(transcript);
-      void askAssistant(transcript);
     };
-    recognition.onend = () => setIsListening(false);
+    recognition.onend = () => {
+      if (speechIdleTimerRef.current !== null) window.clearTimeout(speechIdleTimerRef.current);
+      speechIdleTimerRef.current = null;
+      if (speechRecognitionRef.current === recognition) speechRecognitionRef.current = null;
+      setIsListening(false);
+      const transcript = speechFinalTranscriptRef.current.trim();
+      speechFinalTranscriptRef.current = "";
+      if (!speechFailedRef.current && transcript && !speechSubmittedRef.current) {
+        speechSubmittedRef.current = true;
+        setChatInput(transcript);
+        void askAssistant(transcript);
+      }
+    };
     try {
       recognition.start();
     } catch (error) {
+      speechRecognitionRef.current = null;
+      speechFailedRef.current = true;
       setIsListening(false);
       console.error("[ALASSAUL speech] could not start recognition", error);
       setChatMessages((messages) => [...messages, { from: "assistant", text: "تعذر بدء الميكروفون. أغلق أي تسجيل صوتي آخر ثم حاول مرة أخرى، أو اكتب سؤالك." }]);
@@ -1117,7 +1332,7 @@ export default function Home() {
       return;
     }
     try {
-      const result = await controlMutation.mutateAsync({ title: controlTitle.trim() || "طلب يحتاج متابعة", command, category: controlCategory, priority: controlPriority, requesterType: "visitor" });
+      const result = await controlMutation.mutateAsync({ title: controlTitle.trim() || "طلب يحتاج متابعة", command, category: controlCategory, priority: controlPriority });
       notify("تم استلام الأمر", result.id ? `تم تسجيل الطلب رقم ${result.id} للمراجعة.` : "تم تسجيل الطلب للمراجعة.", "success");
       setControlCommand("");
       setControlTitle("طلب يحتاج متابعة");
@@ -1179,6 +1394,8 @@ export default function Home() {
           </button>
           <nav className={`main-nav ${mobileMenu ? "main-nav-open" : ""}`} aria-hidden={!mobileMenu}>
             <button onClick={() => { setMobileMenu(false); scrollTo("cities"); }}>{t.navExplore}</button>
+            <button onClick={() => { setMobileMenu(false); scrollTo("gallery"); }}>معرض الصور</button>
+            <button onClick={() => { setMobileMenu(false); scrollTo("resident-services"); }}>خدمات المقيمين</button>
             <button onClick={() => { setMobileMenu(false); scrollTo("live"); }}>{t.navLive}</button>
             <button onClick={() => { setMobileMenu(false); scrollTo("map"); }}>{t.navMap}</button>
             <button onClick={() => { setMobileMenu(false); scrollTo("entertainment"); }}>{t.navEntertainment}</button>
@@ -1251,6 +1468,139 @@ export default function Home() {
         </div>
       </section>
 
+      <section id="gallery" className="destination-gallery-section section-pad">
+        <div className="container">
+          <SectionHeading eyebrow="ALASSAUL PHOTO JOURNEY" title="شاهد جمال الشمال التركي" desc="دفتر صور واحد أنيق؛ افتحه لتقليب صفحات البحر والجبال والبحيرات والقرى، ثم انتقل مباشرة إلى خريطة الوجهة." />
+          <div className="photo-book-cover-wrap">
+            <button type="button" className="photo-book-cover" onClick={() => { setPhotoBookPage(0); setPhotoBookOpen(true); }} aria-haspopup="dialog" aria-label="افتح دفتر صور الشمال التركي">
+              <img src="/images/modern-uzungol.webp" alt="غلاف دفتر صور الشمال التركي — أوزونغول" loading="lazy" />
+              <span className="photo-book-cover-shade" />
+              <span className="photo-book-cover-mark">ALASSAUL · TRAVEL JOURNAL</span>
+              <span className="photo-book-cover-title">شاهد جمال<br />الشمال التركي</span>
+              <span className="photo-book-cover-subtitle">دفتر من البحر إلى الغيم</span>
+              <span className="photo-book-cover-cta"><BookOpen size={18} /> افتح دفتر الصور <ArrowLeft size={17} /></span>
+              <span className="photo-book-cover-count">{DESTINATION_GALLERY.length} وجهة مصوّرة</span>
+            </button>
+            <p className="gallery-disclaimer">اضغط على الغلاف لفتح الدفتر، ثم قلّب الصفحات أو افتح موقع أي وجهة على الخريطة.</p>
+          </div>
+          {photoBookOpen && createPortal(<div className="photo-book-overlay" role="dialog" aria-modal="true" aria-label="دفتر صور الشمال التركي" onClick={(event) => { if (event.target === event.currentTarget) setPhotoBookOpen(false); }}>
+            <div className="photo-book-dialog">
+              <button type="button" className="photo-book-close" onClick={() => setPhotoBookOpen(false)} aria-label="إغلاق دفتر الصور"><X size={22} /></button>
+              <div className="photo-book-heading"><span>ALASSAUL PHOTO JOURNAL</span><strong>دفتر الشمال التركي</strong><small>صفحة {photoBookPage + 1} من {DESTINATION_GALLERY.filter((item) => galleryFilter === "الكل" || item.category === galleryFilter).length}</small></div>
+              <div className="gallery-filter-row photo-book-filters" role="group" aria-label="تصفية صفحات الدفتر">
+                {GALLERY_FILTERS.map((filter) => <button key={filter} type="button" className={galleryFilter === filter ? "gallery-filter-active" : ""} onClick={() => { setGalleryFilter(filter); setPhotoBookPage(0); }}>{filter}</button>)}
+              </div>
+              {(() => { const pages = DESTINATION_GALLERY.filter((item) => galleryFilter === "الكل" || item.category === galleryFilter); const item = pages[Math.min(photoBookPage, Math.max(0, pages.length - 1))]; return item ? <article key={`${item.name}-${photoBookPage}`} className="photo-book-page">
+                <div className="photo-book-image-wrap"><img src={item.image} alt={item.alt} loading="eager" /><span className="photo-book-page-number">{String(photoBookPage + 1).padStart(2, "0")}</span></div>
+                <div className="photo-book-page-copy"><span>{item.region}</span><h3>{item.name}</h3><p>{item.alt}. اكتشف الموقع وخطط الطريق قبل الزيارة، فالمسافات والظروف قد تختلف حسب الموسم.</p><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.query)}`} target="_blank" rel="noreferrer">افتح الموقع على الخريطة <ExternalLink size={15} /></a></div>
+              </article> : <p className="media-empty">لا توجد صور في هذا التصنيف.</p>; })()}
+              <div className="photo-book-controls"><button type="button" className="button button-quiet" onClick={() => setPhotoBookPage((page) => Math.max(0, page - 1))} disabled={photoBookPage === 0}><ArrowRight size={16} /> الصفحة السابقة</button><span>{photoBookPage + 1} / {DESTINATION_GALLERY.filter((item) => galleryFilter === "الكل" || item.category === galleryFilter).length}</span><button type="button" className="button button-primary" onClick={() => setPhotoBookPage((page) => Math.min(DESTINATION_GALLERY.filter((item) => galleryFilter === "الكل" || item.category === galleryFilter).length - 1, page + 1))} disabled={photoBookPage >= DESTINATION_GALLERY.filter((item) => galleryFilter === "الكل" || item.category === galleryFilter).length - 1}>الصفحة التالية <ArrowLeft size={16} /></button></div>
+            </div>
+          </div>, document.body)}
+        </div>
+      </section>
+
+      <section id="resident-services" className="resident-services-section section-pad">
+        <div className="container">
+          <SectionHeading eyebrow="ALASSAUL RESIDENT DESK" title="خدمات المقيمين في تركيا" desc="مداخل مباشرة إلى بوابات رسمية تساعدك في الإقامة والمعاملات والبلدية والخدمات اليومية. افتح المصدر الرسمي وتحقق من المتطلبات قبل تقديم أي طلب." />
+          <div className="resident-service-groups">
+            <section className="resident-service-group" aria-labelledby="resident-group-official">
+              <h3 className="resident-service-group-heading" id="resident-group-official">بوابات حكومية وخدمات رسمية</h3>
+              <div className="resident-services-grid resident-service-group-grid">
+      <a className="resident-service-card" href="https://www.turkiye.gov.tr/" target="_blank" rel="noreferrer"><span className="resident-service-icon"><ShieldCheck size={22} /></span><span className="resident-service-copy"><strong>بوابة الحكومة الإلكترونية</strong><small>e-Devlet · الخدمات الحكومية الرقمية</small></span><ExternalLink size={16} /></a>
+      <a className="resident-service-card" href="https://www.goc.gov.tr/" target="_blank" rel="noreferrer"><span className="resident-service-icon"><UsersRound size={22} /></span><span className="resident-service-copy"><strong>إدارة الهجرة</strong><small>المعلومات الرسمية للأجانب والإقامة</small></span><ExternalLink size={16} /></a>
+      <a className="resident-service-card" href="https://e-ikamet.goc.gov.tr/" target="_blank" rel="noreferrer"><span className="resident-service-icon"><BriefcaseBusiness size={22} /></span><span className="resident-service-copy"><strong>نظام الإقامة الإلكتروني</strong><small>طلبات الإقامة ومتابعة الإجراءات</small></span><ExternalLink size={16} /></a>
+      <a className="resident-service-card" href="https://randevu.nvi.gov.tr/" target="_blank" rel="noreferrer"><span className="resident-service-icon"><Clock3 size={22} /></span><span className="resident-service-copy"><strong>مواعيد النفوس</strong><small>بوابة المواعيد الرسمية للنفوس</small></span><ExternalLink size={16} /></a>
+      <a className="resident-service-card" href="https://www.trabzon.bel.tr/" target="_blank" rel="noreferrer"><span className="resident-service-icon"><Landmark size={22} /></span><span className="resident-service-copy"><strong>بلدية طرابزون الكبرى</strong><small>إعلانات البلدية وخدمات المدينة</small></span><ExternalLink size={16} /></a>
+      <a className="resident-service-card" href="https://www.tiski.gov.tr/" target="_blank" rel="noreferrer"><span className="resident-service-icon"><LifeBuoy size={22} /></span><span className="resident-service-copy"><strong>مياه وصرف طرابزون</strong><small>TİSKİ · معلومات وخدمات المياه</small></span><ExternalLink size={16} /></a>
+      <a className="resident-service-card" href="https://dijital.gib.gov.tr/" target="_blank" rel="noreferrer"><span className="resident-service-icon"><BriefcaseBusiness size={22} /></span><span className="resident-service-copy"><strong>الإدارة الضريبية الرقمية</strong><small>البوابة الرسمية للمعاملات الضريبية</small></span><ExternalLink size={16} /></a>
+      <a className="resident-service-card" href="https://www.ptt.gov.tr/" target="_blank" rel="noreferrer"><span className="resident-service-icon"><Mail size={22} /></span><span className="resident-service-copy"><strong>البريد التركي PTT</strong><small>البريد والشحن والخدمات البريدية</small></span><ExternalLink size={16} /></a>
+              </div>
+            </section>
+            <section className="resident-service-group" aria-labelledby="resident-group-health">
+              <h3 className="resident-service-group-heading" id="resident-group-health">الصحة والطوارئ وشؤون الأجانب</h3>
+              <div className="resident-services-grid resident-service-group-grid">
+      <a className="resident-service-card resident-service-health" href="https://www.mhrs.gov.tr/" target="_blank" rel="noreferrer"><span className="resident-service-icon"><Clock3 size={22} /></span><span className="resident-service-copy"><strong>مواعيد المستشفيات الحكومية MHRS</strong><small>حجز وإدارة مواعيد الطبيب · قد يتطلب تسجيل الدخول</small></span><ExternalLink size={16} /></a>
+      <a className="resident-service-card resident-service-health" href="https://enabiz.gov.tr/" target="_blank" rel="noreferrer"><span className="resident-service-icon"><Heart size={22} /></span><span className="resident-service-copy"><strong>السجل الصحي الإلكتروني e‑Nabız</strong><small>بوابة وزارة الصحة للسجلات الصحية الشخصية</small></span><ExternalLink size={16} /></a>
+      <a className="resident-service-card resident-service-yimer" href="https://en.goc.gov.tr/communication-center-for-foreigners" target="_blank" rel="noreferrer"><span className="resident-service-icon"><Phone size={22} /></span><span className="resident-service-copy"><strong>مركز تواصل الأجانب YİMER 157</strong><small>استفسارات الإقامة وشؤون الأجانب · اتصل 157 داخل تركيا</small></span><ExternalLink size={16} /></a>
+      <a className="resident-service-card resident-service-emergency" href="tel:112" aria-label="اتصال بالطوارئ التركية 112"><span className="resident-service-icon"><LifeBuoy size={22} /></span><span className="resident-service-copy"><strong>الطوارئ في تركيا — 112</strong><small>للحالات الطارئة فقط · اضغط للاتصال من الهاتف</small></span><Phone size={16} /></a>
+              </div>
+            </section>
+            <section className="resident-service-group" aria-labelledby="resident-group-local">
+              <h3 className="resident-service-group-heading" id="resident-group-local">مكاتب محلية ومرافق ومركبات</h3>
+              <div className="resident-services-grid resident-service-group-grid">
+      <a className="resident-service-card resident-service-local-office" href="https://www.google.com/maps/search/?api=1&query=Trabzon+İl+Göç+İdaresi+Müdürlüğü" target="_blank" rel="noreferrer"><span className="resident-service-icon"><UsersRound size={22} /></span><span className="resident-service-copy"><strong>مكتب الإقامة وتجديدها — طرابزون</strong><small>موقع إدارة الهجرة الرسمية على الخريطة · تجديد الطلب عبر e‑İkamet</small></span><ExternalLink size={16} /></a>
+      <a className="resident-service-card resident-service-local-office" href="https://www.google.com/maps/search/?api=1&query=Yomra+Noterliği+Trabzon" target="_blank" rel="noreferrer"><span className="resident-service-icon"><Landmark size={22} /></span><span className="resident-service-copy"><strong>مكاتب النوتر (Noter) — يومرا وطرابزون</strong><small>الوكالات والتصديقات ومعاملات بيع المركبات · اختر الأقرب على الخريطة</small></span><ExternalLink size={16} /></a>
+      <a className="resident-service-card resident-service-utility" href="https://www.google.com/maps/search/?api=1&query=Aksa+Çoruh+Elektrik+Müşteri+Hizmetleri+Trabzon" target="_blank" rel="noreferrer"><span className="resident-service-icon"><Zap size={22} /></span><span className="resident-service-copy"><strong>مكتب الكهرباء</strong><small>Aksa Çoruh Elektrik · مراكز خدمة المشتركين في طرابزون</small></span><ExternalLink size={16} /></a>
+      <a className="resident-service-card resident-service-utility" href="https://www.google.com/maps/search/?api=1&query=TİSKİ+Abone+İşlemleri+Trabzon" target="_blank" rel="noreferrer"><span className="resident-service-icon"><LifeBuoy size={22} /></span><span className="resident-service-copy"><strong>مكتب المياه والصرف الصحي</strong><small>TİSKİ · الاشتراكات والفواتير والأعطال</small></span><ExternalLink size={16} /></a>
+      <a className="resident-service-card resident-service-utility" href="https://www.google.com/maps/search/?api=1&query=Aksa+Doğalgaz+Trabzon+Müşteri+Hizmetleri" target="_blank" rel="noreferrer"><span className="resident-service-icon"><Flame size={22} /></span><span className="resident-service-copy"><strong>مكتب الغاز الطبيعي</strong><small>Aksa Doğalgaz · فتح الاشتراك والعداد وخدمة العملاء</small></span><ExternalLink size={16} /></a>
+      <a className="resident-service-card resident-service-vehicle" href="https://www.google.com/maps/search/?api=1&query=TÜVTÜRK+Araç+Muayene+İstasyonu+Trabzon" target="_blank" rel="noreferrer"><span className="resident-service-icon"><CarFront size={22} /></span><span className="resident-service-copy"><strong>مركز معاينة السيارات</strong><small>TÜVTÜRK · ابحث عن أقرب محطة، وتأكد من الموعد ونوع المركبة</small></span><ExternalLink size={16} /></a>
+      <a className="resident-service-card resident-service-vehicle" href="https://www.google.com/maps/search/?api=1&query=Trabzon+Gümrük+Müdürlüğü" target="_blank" rel="noreferrer"><span className="resident-service-icon"><ClipboardCheck size={22} /></span><span className="resident-service-copy"><strong>مكتب الجمارك — معاملات تسجيل المركبة</strong><small>موقع مكتب الجمارك على الخريطة · المتطلبات تختلف حسب وضع المركبة ولوحتها</small></span><ExternalLink size={16} /></a>
+              </div>
+            </section>
+          </div>
+          <div className="resident-local-focus">
+            <div className="resident-local-focus-heading">
+              <span className="resident-local-focus-icon"><MapPin size={19} /></span>
+              <div><strong>دليل يومرا وطرابزون أولًا</strong><small>روابط بحث محلية للخدمات التي يحتاجها المقيم. اختر الخدمة ثم تأكد من العنوان وساعات العمل قبل الذهاب.</small></div>
+            </div>
+            <div className="resident-services-grid resident-local-grid">
+              <a className="resident-service-card resident-service-local-office" href="https://www.google.com/maps/search/?api=1&query=Yeminli+Tercuman+Yomra+Trabzon" target="_blank" rel="noreferrer"><span className="resident-service-icon"><Languages size={22} /></span><span className="resident-service-copy"><strong>مترجم محلف (Yeminli Tercüman)</strong><small>ترجمة الوثائق والمعاملات في يومرا وطرابزون</small></span><ExternalLink size={16} /></a>
+              <a className="resident-service-card resident-service-health" href="https://www.google.com/maps/search/?api=1&query=Yabanci+Saglik+Sigortasi+Yomra+Trabzon" target="_blank" rel="noreferrer"><span className="resident-service-icon"><ShieldCheck size={22} /></span><span className="resident-service-copy"><strong>مكاتب التأمين الصحي للأجانب</strong><small>قارن التغطية والشروط قبل شراء الوثيقة</small></span><ExternalLink size={16} /></a>
+              <a className="resident-service-card resident-service-local-office" href="https://www.google.com/maps/search/?api=1&query=Arac+Tamir+Servisi+Yomra+Trabzon" target="_blank" rel="noreferrer"><span className="resident-service-icon"><CarFront size={22} /></span><span className="resident-service-copy"><strong>ورش إصلاح السيارات</strong><small>بحث محلي عن الورش في يومرا وطرابزون</small></span><ExternalLink size={16} /></a>
+              <a className="resident-service-card resident-service-utility" href="https://www.google.com/maps/search/?api=1&query=Oto+Yedek+Parca+Yomra+Trabzon" target="_blank" rel="noreferrer"><span className="resident-service-icon"><Settings2 size={22} /></span><span className="resident-service-copy"><strong>محلات قطع غيار السيارات</strong><small>ابحث حسب نوع السيارة والقطعة المطلوبة</small></span><ExternalLink size={16} /></a>
+              <a className="resident-service-card resident-service-utility" href="https://www.google.com/maps/search/?api=1&query=Serbest+Muhasebeci+Mali+Musavir+Yomra+Trabzon" target="_blank" rel="noreferrer"><span className="resident-service-icon"><BriefcaseBusiness size={22} /></span><span className="resident-service-copy"><strong>محاسبون ومستشارون ضريبيون</strong><small>Mali Müşavir · اسأل عن خبرتهم في نوع معاملتك</small></span><ExternalLink size={16} /></a>
+              <a className="resident-service-card resident-service-local-office" href="https://www.google.com/maps/search/?api=1&query=Emlak+Yonetim+Ofisi+Yomra+Trabzon" target="_blank" rel="noreferrer"><span className="resident-service-icon"><Landmark size={22} /></span><span className="resident-service-copy"><strong>مكاتب العقارات وإدارة الشقق</strong><small>للاستفسار عن إدارة العقار والصيانة والخدمات</small></span><ExternalLink size={16} /></a>
+            </div>
+          </div>
+          <div className="resident-local-focus resident-daily-focus">
+            <div className="resident-local-focus-heading">
+              <span className="resident-local-focus-icon"><MapPin size={19} /></span>
+              <div><strong>الاحتياجات اليومية السريعة</strong><small>بحث مباشر حول يومرا وطرابزون عن الخدمات اليومية. النتائج والمسافات وساعات العمل تظهر في الخرائط وقد تتغير.</small></div>
+            </div>
+            <div className="resident-services-grid resident-local-grid">
+              <a className="resident-service-card resident-service-health" href="https://www.google.com/maps/search/?api=1&query=N%C3%B6bet%C3%A7i+Eczane+Yomra+Trabzon" target="_blank" rel="noreferrer"><span className="resident-service-icon"><Heart size={22} /></span><span className="resident-service-copy"><strong>الصيدليات المناوبة</strong><small>Nöbetçi Eczane · تحقق من تاريخ المناوبة قبل التوجه</small></span><ExternalLink size={16} /></a>
+              <a className="resident-service-card resident-service-health" href="https://www.google.com/maps/search/?api=1&query=Hastane+Klinik+Yomra+Trabzon" target="_blank" rel="noreferrer"><span className="resident-service-icon"><LifeBuoy size={22} /></span><span className="resident-service-copy"><strong>المستشفيات والعيادات</strong><small>قارن الموقع والتخصص والتأمين المقبول</small></span><ExternalLink size={16} /></a>
+              <a className="resident-service-card resident-service-local-office" href="https://www.google.com/maps/search/?api=1&query=Market+S%C3%BCpermarket+Yomra+Trabzon" target="_blank" rel="noreferrer"><span className="resident-service-icon"><MapPin size={22} /></span><span className="resident-service-copy"><strong>البقالات والأسواق</strong><small>أسواق قريبة للاحتياجات اليومية والمنزلية</small></span><ExternalLink size={16} /></a>
+              <a className="resident-service-card resident-service-local-office" href="https://www.google.com/maps/search/?api=1&query=Su+Tesisat%C3%A7%C4%B1s%C4%B1+Yomra+Trabzon" target="_blank" rel="noreferrer"><span className="resident-service-icon"><Settings2 size={22} /></span><span className="resident-service-copy"><strong>سباكون وصيانة منزلية</strong><small>Su Tesisatçısı · اسأل عن تكلفة الكشف قبل بدء العمل</small></span><ExternalLink size={16} /></a>
+              <a className="resident-service-card resident-service-utility" href="https://www.google.com/maps/search/?api=1&query=%C3%87ilingir+Yomra+Trabzon" target="_blank" rel="noreferrer"><span className="resident-service-icon"><ShieldCheck size={22} /></span><span className="resident-service-copy"><strong>مفاتيح وأقفال</strong><small>Çilingir · تحقق من السعر ووقت الوصول قبل الطلب</small></span><ExternalLink size={16} /></a>
+              <a className="resident-service-card resident-service-local-office" href="https://www.google.com/maps/search/?api=1&query=Evden+Eve+Nakliyat+Yomra+Trabzon" target="_blank" rel="noreferrer"><span className="resident-service-icon"><CarFront size={22} /></span><span className="resident-service-copy"><strong>نقل الأثاث والشقق</strong><small>Evden Eve Nakliyat · اطلب عرض سعر مكتوبًا</small></span><ExternalLink size={16} /></a>
+              <a className="resident-service-card resident-service-utility" href="https://www.google.com/maps/search/?api=1&query=Internet+Servis+Sa%C4%9Flay%C4%B1c%C4%B1+Yomra+Trabzon" target="_blank" rel="noreferrer"><span className="resident-service-icon"><MapPin size={22} /></span><span className="resident-service-copy"><strong>إنترنت واتصالات</strong><small>تحقق من تغطية عنوان الشقة والعقد والرسوم</small></span><ExternalLink size={16} /></a>
+              <a className="resident-service-card resident-service-vehicle" href="https://www.google.com/maps/search/?api=1&query=Oto+Yol+Yard%C4%B1m+%C3%87ekici+Yomra+Trabzon" target="_blank" rel="noreferrer"><span className="resident-service-icon"><CarFront size={22} /></span><span className="resident-service-copy"><strong>سطحات ومساعدة على الطريق</strong><small>Oto Yol Yardım · اتفق على السعر والوجهة قبل التحميل</small></span><ExternalLink size={16} /></a>
+            </div>
+          </div>
+          <div className="resident-local-focus resident-phrasebook">
+            <div className="resident-local-focus-heading">
+              <span className="resident-local-focus-icon"><Languages size={19} /></span>
+              <div><strong>عبارات تركية جاهزة للمواقف اليومية</strong><small>اضغط «نسخ العبارة» ثم أرسلها أو اعرضها على مقدم الخدمة. الترجمة العربية للتوضيح.</small></div>
+            </div>
+            <div className="resident-phrase-grid">
+              {[
+                { ar: "هل تتحدث العربية؟", tr: "Arapça konuşuyor musunuz?" },
+                { ar: "من فضلك، تحدث ببطء.", tr: "Lütfen yavaş konuşur musunuz?" },
+                { ar: "هل يمكن أن تكتب السعر قبل البدء؟", tr: "Başlamadan önce fiyatı yazabilir misiniz?" },
+                { ar: "أحتاج إلى مترجم محلف.", tr: "Yeminli tercümana ihtiyacım var." },
+                { ar: "أين أقرب صيدلية مناوبة؟", tr: "En yakın nöbetçi eczane nerede?" },
+                { ar: "أحتاج إلى طبيب.", tr: "Bir doktora ihtiyacım var." },
+                { ar: "سيارتي تعطلت، أحتاج إلى مساعدة على الطريق.", tr: "Arabam bozuldu, yol yardımına ihtiyacım var." },
+                { ar: "هذا عنواني، هل يمكنك فتحه على الخريطة؟", tr: "Bu benim adresim, haritada açabilir misiniz?" },
+              ].map((phrase) => (
+                <article className="resident-phrase-card" key={phrase.tr}>
+                  <span className="resident-phrase-ar">{phrase.ar}</span>
+                  <strong lang="tr" dir="ltr">{phrase.tr}</strong>
+                  <button type="button" className="resident-phrase-copy" onClick={() => void copyTurkishPhrase(phrase.tr)}>
+                    {copiedTurkishPhrase === phrase.tr ? <Check size={15} /> : <ClipboardCheck size={15} />}
+                    {copiedTurkishPhrase === phrase.tr ? "تم النسخ" : "نسخ العبارة"}
+                  </button>
+                </article>
+              ))}
+            </div>
+            <p className="resident-phrase-status" aria-live="polite">{copiedTurkishPhrase && copiedTurkishPhrase !== "تعذر النسخ — اضغط مطولًا على العبارة" ? "تم نسخ العبارة التركية، يمكنك لصقها في الرسائل." : copiedTurkishPhrase}</p>
+          </div>
+          <p className="resident-services-note"><ShieldCheck size={15} /> هذه روابط للبوابات الرسمية وليست استشارة قانونية أو ضمانًا لقبول الطلب. لا تشارك كلمة المرور أو رمز التحقق مع أي شخص، وتأكد من عنوان الموقع قبل إدخال بياناتك. رقم 112 للطوارئ فقط، وللاستفسارات العامة عن الإقامة وشؤون الأجانب استخدم YİMER 157.</p>
+        </div>
+      </section>
+
       <section id="cameras" className="cameras-section section-pad">
         <div className="container"><SectionHeading eyebrow={t.camerasLabel} title={t.camerasTitle} desc="صور واضحة لكل كمرة؛ اختر المشهد باسمه لفتح المصدر الرسمي المناسب." /><div className="camera-grid camera-group-grid">{cameraFeeds.map((camera, index) => <a key={camera.cameraId} className="camera-card camera-group-card" href={camera.playerUrl} target="_blank" rel="noreferrer" onClick={(event) => { if (camera.streamUrl) { event.preventDefault(); openCamera(camera); } }} aria-label={`${camera.streamUrl ? "تشغيل" : "فتح المصدر الرسمي لـ"} ${camera.title}`}><div className={`camera-thumb camera-direct-art camera-art-${(index % 4) + 1}`}><img className="camera-preview-image" src={camera.image} alt={camera.title} loading="lazy" /><div className="camera-art camera-art-overlay"><Camera size={25} /><span>{camera.title}</span></div><StatusDot label={camera.streamUrl ? "بث مؤكد" : "مصدر رسمي"} /></div><div className="camera-info"><div><small className="camera-label">CAMERA GROUP / 0{index + 1}</small><strong>{camera.title}</strong><small>{camera.meta}</small></div><ExternalLink size={17} /></div></a>)}</div><p className="camera-source-note"><Camera size={14} /> كل بطاقة تحمل اسم الكمرة والمشهد. أوزنجول مقسمة إلى المسجد والبحيرة والقرية والمحيط، وتفتح البطاقات المصدر الرسمي؛ لا نستخدم شارة «بث مباشر» إلا عند تحقق التشغيل داخل المنصة.</p></div>
       </section>
@@ -1300,10 +1650,10 @@ export default function Home() {
         <div className="chat-layout">
           <section className="chat-conversation">
             <div className="chat-body">
-              <div className="chat-welcome"><Sparkles size={16} /> اسألني عن مدينة، رحلة، مواقيت، أو طريق.</div>
+              <div className="chat-welcome"><Sparkles size={16} /> اسألني عن العالم والأخبار والعلوم والرحلات، أو التقط صورة لأساعدك في فهمها.</div>
               <VoiceSelector value={voiceGender} onChange={setVoiceGender} />
               <div className="chat-quick-prompts">{quickPrompts.map((prompt) => <button key={prompt} onClick={() => void askAssistant(prompt)} disabled={chatMutation.isPending}>{prompt}</button>)}</div>
-              {chatMessages.map((message, index) => <div key={`${message.from}-${index}`} className={`chat-message chat-${message.from}`}><span>{message.text}</span>{message.from === "assistant" && <AssistantReply text={message.text} language={language} voiceGender={voiceGender} />}</div>)}
+              {chatMessages.map((message, index) => <div key={`${message.from}-${index}`} className={`chat-message chat-${message.from}`}><span>{renderChatText(message.text)}</span>{message.imageDataUrl && <img className="chat-message-image" src={message.imageDataUrl} alt="الصورة التي أرسلها المستخدم" />}{message.from === "assistant" && <AssistantReply text={message.text} language={language} voiceGender={voiceGender} />}</div>)}
               {chatMutation.isPending && <div className="chat-message chat-assistant chat-thinking"><span className="thinking-dots">● ● ●</span><small>العسول يكتب بالفصحى…</small></div>}
               <div ref={chatEndRef} />
             </div>
@@ -1313,7 +1663,7 @@ export default function Home() {
             <div className="chat-route-destinations">{latestRouteMessage.route.destinations.map((destination) => <RouteMapCard key={destination} origin={latestRouteMessage.route?.origin} destination={destination} language={language} />)}</div>
           </section>}
         </div>
-        <ChatComposer value={chatInput} onChange={setChatInput} onSend={sendChat} onVoice={startVoice} isListening={isListening} voiceSupported={speechRecognitionAvailable} isLoading={chatMutation.isPending} placeholder={t.chatPlaceholder} />
+        <ChatComposer value={chatInput} onChange={setChatInput} onSend={sendChat} onVoice={startVoice} isListening={isListening} voiceSupported={speechRecognitionAvailable} isLoading={chatMutation.isPending || chatImageBusy} placeholder={t.chatPlaceholder} onImageSelected={(file) => void prepareChatImage(file)} imagePreview={chatImageDataUrl} />
       </aside>}
 
       {discoveryOpen && <div className="discovery-viewer" role="dialog" aria-modal="true" aria-label="اكتشف الشمال التركي">
