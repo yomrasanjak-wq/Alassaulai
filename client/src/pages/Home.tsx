@@ -196,7 +196,7 @@ const cities: City[] = [
     access: "الوصول الأسهل عبر مطار طرابزون؛ يبعد مركز المدينة نحو 10–15 دقيقة بالسيارة، ثم تتفرع الطرق إلى أوزنجول وماچكا والمرتفعات.",
     mapQuery: "Trabzon Turkey",
     featured: [
-      destination("همشِكوي", "قرى ومرتفعات", "Hamsikoy Trabzon Turkey", "وجهة جبلية محببة للسائح مع القرية والطبيعة ومذاقات المنطقة."),
+      destination("همشِكوي", "قرى ومرتفعات", "Hamsikoy Trabzon Turkey", "وجهة جبلية محببة للسائح مع القرية والطبي��ة ومذاقات المنطقة."),
       destination("حاجي مصطفى فوق همشِكوي", "مقاهٍ ومطاعم", "Haci Mustafa Hamsikoy Trabzon Turkey", "جلسة ومطعم معروف في طريق همشِكوي؛ يتحقق الزائر من ساعات العمل قبل الانطلاق."),
       destination("أكبر وأحدث زحليقة في يومرا", "أنشطة ومغامرات", "Forapark Yomra Dağ Kızağı Merkezi Kaşüstü Trabzon Turkey", "فورابارك — زحليقة جبلية في كاشستوس؛ تشير بيانات البوابة إلى افتتاحها في 28 يوليو 2026 وطول مسار يقارب 850 متراً. تحقق من ساعات العمل والأسعار والتشغيل قبل الزيارة."),
     ],
@@ -466,8 +466,8 @@ const cameraFeeds: CameraFeed[] = [
   { title: "مجموعة يومرا", meta: "مركز يومرا والحدائق والأحياء والمرتفعات", cameraId: "yomra-group", playerUrl: "https://www.yomra.bel.tr/Sayfa/13/canli-yayin", sourceType: "official-page", image: ASSETS.ayder },
   { title: "كمرة مسجد أوزنجول", meta: "مشهد المسجد · اختيار Uzungöl من صفحة بلدية طرابزون الرسمية", cameraId: "uzungol-mosque-3049", playerUrl: "https://www.trabzon.bel.tr/Web/SehirKameralari#camera-3049", sourceType: "official-page", image: ASSETS.hero },
   { title: "كمرة بحيرة أوزنجول", meta: "مشهد البحيرة · اختيار Uzungöl من صفحة بلدية طرابزون الرسمية", cameraId: "uzungol-lake-3049", playerUrl: "https://www.trabzon.bel.tr/Web/SehirKameralari#camera-3049", sourceType: "official-page", image: ASSETS.trabzon },
-  { title: "كمرة قرية أوزنجول", meta: "مشهد القرية · اختيار Uzungöl من صفحة بلدية طرابزون الرسمية", cameraId: "uzungol-village-3049", playerUrl: "https://www.trabzon.bel.tr/Web/SehirKameralari#camera-3049", sourceType: "official-page", image: ASSETS.ayder },
-  { title: "مجموعة سامسون", meta: "نصب أونور وساعات هانه والأرصفة وأميسوس", cameraId: "samsun-group", playerUrl: "https://mobil.samsun.bel.tr/canliizle.html", sourceType: "official-page", image: ASSETS.hero },
+  { title: "��مرة قرية أوزنجول", meta: "مشهد القرية · اختيار Uzungöl من صفحة بلدية طرابزون الرسمية", cameraId: "uzungol-village-3049", playerUrl: "https://www.trabzon.bel.tr/Web/SehirKameralari#camera-3049", sourceType: "official-page", image: ASSETS.ayder },
+  { title: "مجموعة سامس��ن", meta: "نصب أونور وساعات هانه والأرصفة وأميسوس", cameraId: "samsun-group", playerUrl: "https://mobil.samsun.bel.tr/canliizle.html", sourceType: "official-page", image: ASSETS.hero },
   { title: "مجموعة إسطنبول", meta: "كاميرات بلدية إسطنبول السياحية والمرورية", cameraId: "istanbul-group", playerUrl: "https://ibb.istanbul/tum-hizmetler/e-belediye-hizmetleri/e-bilgi/kameralar/", sourceType: "official-page", image: ASSETS.trabzon },
   { title: "كاميرا ميدان تقسيم", meta: "إطلالة مباشرة على ميدان تقسيم وشارع الاستقلال · بلدية إسطنبول", cameraId: "istanbul-taksim", playerUrl: "https://istanbuluseyret.ibb.istanbul/tr/turistik-kamera/taksim-meydan", sourceType: "official-page", image: ASSETS.trabzon },
   { title: "كاميرا كاديكوي", meta: "رصيف كاديكوي وحركة العبارات في الجانب الآسيوي · بلدية إسطنبول", cameraId: "istanbul-kadikoy", playerUrl: "https://istanbuluseyret.ibb.istanbul/tr/turistik-kamera/kadikoy", sourceType: "official-page", image: ASSETS.hero },
@@ -1213,7 +1213,7 @@ export default function Home() {
       if (previous) URL.revokeObjectURL(previous);
       return url;
     });
-    setCameraMessage(`تم اختيار الصورة: ${file.name}`);
+    setCameraMessage(`تم اختيار الصو��ة: ${file.name}`);
     notify("تم اختيار الصورة", "يمكنك الآن حفظ الذكرى بعد كتابة تعليقك.", "success");
   }
 
@@ -1529,7 +1529,7 @@ export default function Home() {
             <section className="resident-service-group" aria-labelledby="resident-group-local">
               <h3 className="resident-service-group-heading" id="resident-group-local">مكاتب محلية ومرافق ومركبات</h3>
               <div className="resident-services-grid resident-service-group-grid">
-      <a className="resident-service-card resident-service-local-office" href="https://www.google.com/maps/search/?api=1&query=Trabzon+İl+Göç+İdaresi+Müdürlüğü" target="_blank" rel="noreferrer"><span className="resident-service-icon"><UsersRound size={22} /></span><span className="resident-service-copy"><strong>مكتب الإقامة وتجديدها — طرابزون</strong><small>موقع إدارة الهجرة الرسمية على الخريطة · تجديد الطلب عبر e‑İkamet</small></span><ExternalLink size={16} /></a>
+      <a className="resident-service-card resident-service-local-office" href="https://www.google.com/maps/search/?api=1&query=Trabzon+İl+Göç+İdaresi+Müdürlüğü" target="_blank" rel="noreferrer"><span className="resident-service-icon"><UsersRound size={22} /></span><span className="resident-service-copy"><strong>مكتب الإقامة وتجديدها — طرابزون</strong><small>موقع إدارة الهجرة الرسمية على الخريطة · تجديد ال��لب عبر e‑İkamet</small></span><ExternalLink size={16} /></a>
       <a className="resident-service-card resident-service-local-office" href="https://www.google.com/maps/search/?api=1&query=Yomra+Noterliği+Trabzon" target="_blank" rel="noreferrer"><span className="resident-service-icon"><Landmark size={22} /></span><span className="resident-service-copy"><strong>مكاتب النوتر (Noter) — يومرا وطرابزون</strong><small>الوكالات والتصديقات ومعاملات بيع المركبات · اختر الأقرب على الخريطة</small></span><ExternalLink size={16} /></a>
       <a className="resident-service-card resident-service-utility" href="https://www.google.com/maps/search/?api=1&query=Aksa+Çoruh+Elektrik+Müşteri+Hizmetleri+Trabzon" target="_blank" rel="noreferrer"><span className="resident-service-icon"><Zap size={22} /></span><span className="resident-service-copy"><strong>مكتب الكهرباء</strong><small>Aksa Çoruh Elektrik · مراكز خدمة المشتركين في طرابزون</small></span><ExternalLink size={16} /></a>
       <a className="resident-service-card resident-service-utility" href="https://www.google.com/maps/search/?api=1&query=TİSKİ+Abone+İşlemleri+Trabzon" target="_blank" rel="noreferrer"><span className="resident-service-icon"><LifeBuoy size={22} /></span><span className="resident-service-copy"><strong>مكتب المياه والصرف الصحي</strong><small>TİSKİ · الاشتراكات والفواتير والأعطال</small></span><ExternalLink size={16} /></a>

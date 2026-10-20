@@ -524,7 +524,7 @@ describe("Entertainment memory game", () => {
     await waitFor(() => expect(screen.getByTestId("memory-moves").textContent).toBe("1"), { timeout: 1000 });
     expect(screen.getByRole("button", { name: "لعبة جديدة" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "لعبة جديدة" }));
-    expect(screen.getAllByRole("button", { name: "بطاقة مخفية" })).toHaveLength(12);
+    expect(screen.getAllByRole("button", { name: "ب��اقة مخفية" })).toHaveLength(12);
   });
 });
 
