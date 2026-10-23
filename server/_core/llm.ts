@@ -1,19 +1,33 @@
-import { z } from "zod";
-import { publicProcedure, router } from "./_core/trpc";
-import { invokeLLM } from "./_core/llm";
+function cleanQuestion(q: string): string {
+  let c = q.trim().replace(/\s+/g, ' ');
+  if (c.length > 300) c = c.slice(0, 300);
+  return c;
+}
 
-export const appRouter = router({
-  ask: publicProcedure
-    .input(z.object({ question: z.string() }))
-    .mutation(async ({ input }) => {
-      try {
-        const answer = await invokeLLM(input.question);
-        return { answer };
-      } catch (e: any) {
-        console.error("ASK ERROR:", e);
-        return { answer: `DEBUG: ${e.message} | GROQ_KEY_EXISTS: ${!!process.env.GROQ_API_KEY} | OR_KEY_EXISTS: ${!!process.env.OPENROUTER_API_KEY}` };
-      }
-    }),
-});
-
-export type AppRouter = typeof appRouter;
+export async function invokeLLM(question: string): Promise<string> {
+  const q = cleanQuestion(question);
+  try {
+    const key = process.env.GROQ_API_KEY;
+    if (!key) throw new Error("GROQ_KEY missing");
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "llama-3.1-8b-instant",
+        messages: [
+          { role: "system", content: "أنت العسّول خبير طرابزون، جاوب بلهجة سعودية مباشرة" },
+          { role: "user", content: q }
+        ],
+        temperature: 0.7,
+        max_tokens: 1000
+      })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    return data.choices[0].message.content;
+  } catch (e: any) {
+    console.error(e);
+    return `المسافة من جدة لمكة 85 كم، ومن طرابزون لأوردو 170 كم ساعتين ونص. حرارة طرابزون 18-22. تبغى برنامج؟ (خطأ فني: ${e.message})`;
+  }
+}
+export const askAssoul = invokeLLM;
