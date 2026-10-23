@@ -5,7 +5,7 @@ type LiveStatusViewProps = {
   isLive?: boolean;
 };
 
-export default function LiveStatusView({ src, isLive }: LiveStatusViewProps) {
+export function LiveStatusView({ src, isLive }: LiveStatusViewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "live" | "error">("idle");
 
@@ -19,14 +19,10 @@ export default function LiveStatusView({ src, isLive }: LiveStatusViewProps) {
     const init = async () => {
       try {
         setStatus("loading");
-        // Dynamic import to allow vite to split hls.js into separate chunk
         if (src.includes(".m3u8")) {
           const Hls = (await import("hls.js")).default;
           if (Hls.isSupported()) {
-            hlsInstance = new Hls({
-              enableWorker: true,
-              lowLatencyMode: true,
-            });
+            hlsInstance = new Hls({ enableWorker: true, lowLatencyMode: true });
             hlsInstance.loadSource(src);
             hlsInstance.attachMedia(video);
             hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
@@ -50,32 +46,20 @@ export default function LiveStatusView({ src, isLive }: LiveStatusViewProps) {
     };
 
     init();
-
     return () => {
-      if (hlsInstance) {
-        hlsInstance.destroy();
-      }
+      if (hlsInstance) hlsInstance.destroy();
     };
   }, [src]);
 
   return (
     <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden">
-      <video
-        ref={videoRef}
-        controls
-        playsInline
-        className="w-full h-full object-contain"
-      />
+      <video ref={videoRef} controls playsInline className="w-full h-full object-contain" />
       <div className="absolute top-3 left-3 flex items-center gap-2">
-        {isLive && (
-          <span className="px-2 py-1 text-xs font-bold bg-red-600 text-white rounded animate-pulse">
-            LIVE
-          </span>
-        )}
-        <span className="px-2 py-1 text-xs bg-black/60 text-white rounded">
-          {status}
-        </span>
+        {isLive && <span className="px-2 py-1 text-xs font-bold bg-red-600 text-white rounded animate-pulse">LIVE</span>}
+        <span className="px-2 py-1 text-xs bg-black/60 text-white rounded">{status}</span>
       </div>
     </div>
   );
 }
+
+export default LiveStatusView;
