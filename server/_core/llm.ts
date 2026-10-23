@@ -1,8 +1,8 @@
-export async function askAssoul(question: string): Promise<string> {
+export async function invokeLLM(question: string): Promise<string> {
   const apiKey = process.env.GROQ_API_KEY;
   
   if (!apiKey || !apiKey.startsWith("gsk_")) {
-    throw new Error("GROQ_API_KEY غير صحيح");
+    throw new Error("GROQ_API_KEY غير صحيح - لازم يبدأ gsk_");
   }
 
   const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -36,3 +36,6 @@ export async function askAssoul(question: string): Promise<string> {
   const data = await response.json();
   return data.choices[0].message.content;
 }
+
+// عشان يشتغل مع الاسمين
+export const askAssoul = invokeLLM;
