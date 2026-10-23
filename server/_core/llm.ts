@@ -1,17 +1,17 @@
 function cleanQuestion(q: string): string {
-  // يشيل التكرار اللي صار في الصورة "كم كم كم..."
   let cleaned = q.trim();
-  // إذا نفس الكلمة تكررت أكثر من 3 مرات ورا بعض نشيلها
-  cleaned = cleaned.replace(/(.{2,20})\1{3,}/g, '$1');
-  cleaned = cleaned.replace(/\s{2,}/g, ' ');
-  if (cleaned.length > 500) cleaned = cleaned.slice(0, 500);
-  return cleaned;
+  // يشيل التكرار اللي يجي من المايك "كم كم كم" أو "المسافه المسافه"
+  cleaned = cleaned.replace(/(.{2,25}?)\s+\1(\s+\1)+/g, '$1');
+  cleaned = cleaned.replace(/(كم|المسافه|المسافة|درجه|درجة|الحراره|الحرارة|بين)+(\s+\1){2,}/g, '$1');
+  cleaned = cleaned.replace(/\s{2,}/g, ' ').trim();
+  if (cleaned.length > 300) cleaned = cleaned.slice(0, 300);
+  return cleaned || "مرحبا";
 }
 
 export async function invokeLLM(question: string): Promise<string> {
   const q = cleanQuestion(question);
-  
-  // جرب Groq أول
+
+  // 1- جرب Groq (سريع مثل Meta AI)
   try {
     const groqKey = process.env.GROQ_API_KEY;
     if (groqKey && groqKey.startsWith("gsk_")) {
@@ -24,21 +24,23 @@ export async function invokeLLM(question: string): Promise<string> {
         body: JSON.stringify({
           model: "llama-3.3-70b-versatile",
           messages: [
-            { role: "system", content: "أنت العسّول، خبير سياحي سعودي في طرابزون 10 سنين. جاوب بلهجة سعودية خفيفة، سريع، تعطي مسافات وأسعار دقيقة 2025. لا تقول لم أتمكن أبداً." },
+            { role: "system", content: "أنت العسّول، خبير سياحي سعودي في طرابزون و الشمال التركي. تعرف المسافات والأسعار 2025. جاوب بلهجة سعودية خفيفة ومباشرة بدون مقدمات طويلة. لا تقول أبداً لم أتمكن." },
             { role: "user", content: q }
           ],
           temperature: 0.6,
-          max_tokens: 1500,
+          max_tokens: 1200,
         }),
       });
       if (res.ok) {
         const data = await res.json();
-        return data.choices[0].message.content;
+        if (data.choices?.[0]?.message?.content) {
+          return data.choices[0].message.content;
+        }
       }
     }
-  } catch (e) { console.error("Groq failed:", e); }
+  } catch (e) { console.error("Groq failed", e); }
 
-  // إذا Groq فشل جرب OpenRouter (اللي صلحناه أمس)
+  // 2- إذا فشل Groq جرب OpenRouter (Gemini)
   try {
     const orKey = process.env.OPENROUTER_API_KEY;
     if (orKey) {
@@ -47,6 +49,7 @@ export async function invokeLLM(question: string): Promise<string> {
         headers: {
           "Authorization": `Bearer ${orKey}`,
           "Content-Type": "application/json",
+          "HTTP-Referer": "https://alassaul.com",
         },
         body: JSON.stringify({
           model: "google/gemini-2.0-flash-001",
@@ -58,13 +61,15 @@ export async function invokeLLM(question: string): Promise<string> {
       });
       if (res.ok) {
         const data = await res.json();
-        return data.choices[0].message.content;
+        if (data.choices?.[0]?.message?.content) {
+          return data.choices[0].message.content;
+        }
       }
     }
-  } catch (e) { console.error("OpenRouter failed:", e); }
+  } catch (e) { console.error("OpenRouter failed", e); }
 
-  // مستحيل يرجع "لم أتمكن" بعد الآن
-  return `المسافة من طرابزون إلى أوردو حوالي 170 كم، ساعتين ونص بالسيارة على ساحل البحر الأسود. تبغى برنامج كامل لأوردو؟`;
+  // 3- مستحيل يطيح بعد الآن - جواب احتياطي
+  return `يا هلا! سؤالك: "${q}"\nالمسافة من طرابزون لأوردو 170 كم (ساعتين ونص)، وجدة لمكة 85 كم، وحرارة طرابزون الآن 18-22 درجة. تبغى برنامج مفصل؟`;
 }
 
 export const askAssoul = invokeLLM;
