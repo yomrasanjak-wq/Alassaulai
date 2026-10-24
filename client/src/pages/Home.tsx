@@ -1089,7 +1089,7 @@ export default function Home() {
       }
     } catch (error) {
       console.error("[ALASSAUL chat] request failed", error);
-      setChatMessages((messages) => [...messages, { from: "assistant", text: getChatErrorMessage(error) }]);
+      setChatMessages((messages) => [...messages, { from: "assistant", text: getChatErrorMessage(error, userText) }]);
       notify("تعذر إكمال الطلب", "جرّب مرة أخرى أو اكتب السؤال بصياغة أقصر.", "error");
     }
   }
