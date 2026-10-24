@@ -1,61 +1,143 @@
-import React, { useRef, useState, useEffect } from "react";
-import { Pause, Volume2 } from "lucide-react";
-type VoiceGender = "male" | "female";
-type AssistantReplyProps = { text: string; language: "AR" | "TR" | "EN"; autoSpeak?: boolean; voiceGender?: VoiceGender; };
-const speechLanguage = { AR: "ar-SA", TR: "tr-TR", EN: "en-US" };
-function cleanSpeechText(text: string) {
-  if (!text) return "مرحبا";
-  return text.replace(/```[\s\S]*?```/g, "").replace(/[*_#`]/g, "").replace(/\[(.*?)\]\(.*?\)/g, "$1").replace(/\s+/g, " ").trim().substring(0, 250);
+import React, { useEffect, useRef, useState } from "react";
+
+export type VoiceGender = "male" | "female";
+
+type AssistantReplyProps = {
+  text: string;
+  language?: "AR" | "TR" | "EN";
+  voiceGender?: VoiceGender;
+  autoSpeak?: boolean;
+};
+
+function cleanSpeechText(text: string): string {
+  if (!text) return "";
+  // احذف الروابط والإيموجي الزايد والنجوم
+  let t = text
+    .replace(/https?:\/\/\S+/g, "")
+    .replace(/[*#_`\[\]()]/g, "")
+    .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}]/gu, "")
+    .trim();
+  
+  // خذ أول جملتين فقط عشان الصوت ما يطول
+  const sentences = t.split(/[.!?؟\n]+/).filter(s => s.trim().length > 0);
+  if (sentences.length > 2) {
+    t = sentences.slice(0, 2).join(". ") + ".";
+  }
+  
+  // لو النص فيه "أعد سؤالك" أو "لم أتمكن" - لا تقراه، قول مرحبا بداله
+  if (t.includes("أعد سؤالك") || t.includes("لم أتمكن") || t.includes("تعذر") || t.length < 2) {
+    return "مرحبا";
+  }
+  
+  return t.slice(0, 250); // قصير للصوت
 }
-export function AssistantReply({ text, language, autoSpeak = false, voiceGender = "male" }: AssistantReplyProps) {
+
+export function AssistantReply({ text, language = "AR", voiceGender = "male", autoSpeak = true }: AssistantReplyProps) {
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [hasSpoken, setHasSpoken] = useState(false);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
-  useEffect(() => {
-    const loadVoices = () => {
-      const v = window.speechSynthesis?.getVoices() || [];
-      if (v.length > 0) setVoices(v);
+
+  const speakText = React.useCallback((rawText: string) => {
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+    
+    const synth = window.speechSynthesis;
+    synth.cancel(); // وقف أي صوت قديم
+    
+    const cleaned = cleanSpeechText(rawText);
+    if (!cleaned) return;
+
+    const utterance = new SpeechSynthesisUtterance(cleaned);
+    utteranceRef.current = utterance;
+    
+    utterance.lang = language === "AR" ? "ar-SA" : language === "TR" ? "tr-TR" : "en-US";
+    utterance.rate = 0.95;
+    utterance.pitch = voiceGender === "female" ? 1.15 : 0.95;
+    utterance.volume = 1;
+
+    // اختر أفضل صوت عربي متاح - يصلح مشكلة سامسونج
+    const setVoice = () => {
+      const voices = synth.getVoices();
+      if (!voices.length) return;
+      
+      // دور على صوت عربي
+      let arabicVoice = voices.find(v => v.lang.startsWith("ar") && v.name.toLowerCase().includes(voiceGender === "female" ? "female" : "male"));
+      if (!arabicVoice) arabicVoice = voices.find(v => v.lang.startsWith("ar"));
+      if (!arabicVoice) arabicVoice = voices.find(v => v.lang.includes("ar-SA"));
+      if (arabicVoice) utterance.voice = arabicVoice;
     };
-    loadVoices();
-    window.speechSynthesis?.addEventListener("voiceschanged", loadVoices);
-    const timer = setTimeout(loadVoices, 1000);
+
+    // حاول تحميل الأصوات
+    setVoice();
+    if (synth.getVoices().length === 0) {
+      // سامسونج يحتاج انتظار
+      setTimeout(() => {
+        setVoice();
+        synth.speak(utterance);
+      }, 800);
+    }
+
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => {
+      setIsSpeaking(false);
+      setHasSpoken(true);
+    };
+    utterance.onerror = () => {
+      setIsSpeaking(false);
+    };
+
+    // تأخير صغير عشان المتصفح يجهز
+    setTimeout(() => {
+      synth.speak(utterance);
+    }, 100);
+  }, [language, voiceGender]);
+
+  // تشغيل تلقائي عند وصول رسالة جديدة - هذا اللي يخليه يتكلم لحاله!
+  useEffect(() => {
+    if (!autoSpeak || !text || hasSpoken) return;
+    
+    // تأخير 600ms بعد ظهور النص
+    const timer = setTimeout(() => {
+      speakText(text);
+    }, 600);
+
+    return () => clearTimeout(timer);
+  }, [text, autoSpeak, hasSpoken, speakText]);
+
+  // إعادة ضبط عند رسالة جديدة
+  useEffect(() => {
+    setHasSpoken(false);
+  }, [text]);
+
+  // نظف الصوت عند الخروج
+  useEffect(() => {
     return () => {
-      window.speechSynthesis?.removeEventListener("voiceschanged", loadVoices);
-      clearTimeout(timer);
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
     };
   }, []);
-  useEffect(() => {
-    if (autoSpeak && text) {
-      const t = setTimeout(() => speak(), 600);
-      return () => clearTimeout(t);
+
+  const handleManualSpeak = () => {
+    if (isSpeaking) {
+      window.speechSynthesis?.cancel();
+      setIsSpeaking(false);
+      return;
     }
-  }, [text, autoSpeak]);
-  const stopSpeaking = () => { window.speechSynthesis?.cancel(); setIsSpeaking(false); };
-  const speak = () => {
-    if (typeof window === "undefined") return;
-    const synthesis = window.speechSynthesis;
-    if (!synthesis) return;
-    synthesis.cancel();
-    setTimeout(() => {
-      let spokenText = cleanSpeechText(text);
-      if (!spokenText || spokenText.includes("أعد سؤالك")) spokenText = "مرحبا";
-      const utterance = new SpeechSynthesisUtterance(spokenText);
-      utterance.lang = speechLanguage[language] || "ar-SA";
-      utterance.rate = 1; utterance.pitch = 1; utterance.volume = 1;
-      const allVoices = synthesis.getVoices();
-      const arVoice = allVoices.find(v => v.lang.toLowerCase().includes("ar")) || allVoices[0];
-      if (arVoice) utterance.voice = arVoice;
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
-      utteranceRef.current = utterance;
-      synthesis.speak(utterance);
-    }, 150);
+    setHasSpoken(false);
+    speakText(text);
   };
+
   return (
-    <button onClick={isSpeaking ? stopSpeaking : speak} type="button" style={{ display: "flex", alignItems: "center", gap: "4px", padding: "6px 10px", borderRadius: "12px", border: "1px solid #10b981", background: "#ecfdf5", fontSize: "12px", cursor: "pointer", color: "#065f46" }}>
-      {isSpeaking ? <Pause size={14} /> : <Volume2 size={14} />}
-      <small>{isSpeaking ? "إيقاف" : "استماع 🔊"}</small>
-    </button>
+    <div className="assistant-voice-controls">
+      <button
+        type="button"
+        onClick={handleManualSpeak}
+        className={`voice-play-button ${isSpeaking ? "is-speaking" : ""}`}
+        aria-label={isSpeaking ? "إيقاف الصوت" : "استماع للرد"}
+      >
+        <span className="voice-icon">{isSpeaking ? "⏸️" : "🔊"}</span>
+        <span>{isSpeaking ? "إيقاف" : "استماع 🔊"}</span>
+      </button>
+    </div>
   );
 }
