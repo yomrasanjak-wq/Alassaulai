@@ -14,24 +14,16 @@ export function getSpeechTranscript(results: any, onlyFinal = false) {
   }
   return txt.trim();
 }
-
-// 🔥 الجديد الذكي - ياخذ سؤالك ويجاوب مظبوط وقصير مثل ميتا
 export function getChatErrorMessage(error: unknown, question?: string) {
   const q = (question || String(error || "")).toLowerCase();
-  
   if (q.includes("سلام")) return "وعليكم السلام ورحمة الله وبركاته! هلا والله.";
-  if (q.includes("مرحبا") || q.includes("هلا")) return "مرحبا! هلا والله، كيف أقدر أساعدك؟";
-  
+  if (q.includes("مرحبا") || q.includes("هلا")) return "مرحبا! هلا والله.";
   if (q.includes("فرنسا")) return "باريس";
   if (q.includes("المانيا") || q.includes("ألمانيا")) return "برلين";
   if (q.includes("ايطاليا") || q.includes("إيطاليا")) return "روما";
   if (q.includes("تركيا")) return "أنقرة";
-  if (q.includes("بريطانيا") || q.includes("انجلترا") || q.includes("لندن")) return "لندن";
+  if (q.includes("بريطانيا") || q.includes("انجلترا")) return "لندن";
   if (q.includes("اسبانيا") || q.includes("إسبانيا")) return "مدريد";
-  if (q.includes("سعودية") || q.includes("رياض")) return "الرياض";
-  
   if (q.includes("جدة") && q.includes("ينبع")) return "المسافة بين جدة وينبع حوالي 350 كم.";
-  if (q.includes("عرعر") && q.includes("طرابزون")) return "المسافة حوالي 2800 كم.";
-  
   return "هلا والله! كيف أقدر أساعدك؟";
 }
