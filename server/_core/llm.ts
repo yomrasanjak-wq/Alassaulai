@@ -1,22 +1,20 @@
 export async function invokeLLM(question: string): Promise<string> {
-  const q = (question || "").trim();
-  const lower = q.toLowerCase();
-
-  // أجوبة مظبوطة فورية - بدون Groq - مثل ميتا
-  if (lower.includes("سلام")) {
-    return "وعليكم السلام ورحمة الله وبركاته! هلا والله.";
-  }
-  if (lower.includes("فرنسا")) return "عاصمة فرنسا هي باريس.";
-  if (lower.includes("المانيا") || lower.includes("ألمانيا")) return "عاصمة ألمانيا هي برلين.";
-  if (lower.includes("ايطاليا") || lower.includes("إيطاليا")) return "عاصمة إيطاليا هي روما.";
-  if (lower.includes("تركيا")) return "عاصمة تركيا هي أنقرة.";
-  if (lower.includes("بريطانيا") || lower.includes("انجلترا")) return "عاصمة بريطانيا هي لندن.";
-  if (lower.includes("اسبانيا") || lower.includes("إسبانيا")) return "عاصمة إسبانيا هي مدريد.";
+  const q = (question || "").toLowerCase().trim();
   
-  if (lower.includes("جدة") && lower.includes("ينبع")) return "المسافة بين جدة وينبع حوالي 350 كم.";
-  if (lower.includes("عرعر") && lower.includes("طرابزون")) return "المسافة بين عرعر وطرابزون حوالي 2800 كم.";
+  if (!q) return "مرحبا! كيف أقدر أساعدك؟";
+  if (q.includes("سلام")) return "وعليكم السلام ورحمة الله وبركاته! هلا والله.";
+  if (q.includes("مرحبا") || q.includes("هلا")) return "مرحبا! هلا والله.";
   
-  // أي سؤال ثاني - جرب Groq
+  if (q.includes("فرنسا")) return "باريس";
+  if (q.includes("المانيا") || q.includes("ألمانيا")) return "برلين";
+  if (q.includes("ايطاليا") || q.includes("إيطاليا")) return "روما";
+  if (q.includes("تركيا")) return "أنقرة";
+  if (q.includes("بريطانيا") || q.includes("انجلترا")) return "لندن";
+  if (q.includes("اسبانيا") || q.includes("إسبانيا")) return "مدريد";
+  
+  if (q.includes("جدة") && q.includes("ينبع")) return "المسافة بين جدة وينبع حوالي 350 كم.";
+  
+  // لو سؤال عام - جرب Groq، ولو فشل رجع جواب قصير
   try {
     const key = process.env.GROQ_API_KEY;
     if (!key) throw new Error("no key");
@@ -26,11 +24,11 @@ export async function invokeLLM(question: string): Promise<string> {
       body: JSON.stringify({
         model: "llama-3.1-8b-instant",
         messages: [
-          { role: "system", content: "أنت العسولي، جاوب باختصار شديد سطر واحد فقط، جواب مظبوط. لا تذكر أنك ذكاء اصطناعي." },
-          { role: "user", content: q }
+          { role: "system", content: "جاوب باختصار شديد سطر واحد فقط، بدون ذكر ميتا." },
+          { role: "user", content: question }
         ],
         temperature: 0.2,
-        max_tokens: 100,
+        max_tokens: 80,
       }),
     });
     const data = await res.json();
@@ -40,5 +38,4 @@ export async function invokeLLM(question: string): Promise<string> {
   
   return "هلا والله! كيف أقدر أساعدك؟";
 }
-
 export const askAssoul = invokeLLM;
