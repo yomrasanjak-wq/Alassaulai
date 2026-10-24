@@ -1,15 +1,10 @@
-function cleanQuestion(q: string): string {
-  let c = q.trim().replace(/\s+/g, ' ').slice(0, 500);
-  return c || "مرحبا";
-}
+export async function invokeLLM(question: string, history: any[] = []): Promise<string> {
+  const q = question.trim().slice(0, 800);
+  if (!q) return "يا هلا والله! كيف أقدر أساعدك اليوم؟";
 
-export async function invokeLLM(question: string, history: {role: string, content: string}[] = []): Promise<string> {
-  const q = cleanQuestion(question);
-
-  // جرب Groq
   try {
     const key = process.env.GROQ_API_KEY;
-    if (!key) throw new Error("MISSING_GROQ_KEY");
+    if (!key) throw new Error("NO_KEY");
 
     const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
@@ -18,48 +13,77 @@ export async function invokeLLM(question: string, history: {role: string, conten
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "llama-3.3-70b-versatile", // أذكى 10 مرات من 8b - مثل ميتا
+        model: "llama-3.3-70b-versatile",
         messages: [
-          { 
-            role: "system", 
-            content: `أنت "العسولي" - مرشد سياحي ذكي وخبير في طرابزون ويومرا، مثل Meta AI.
+          {
+            role: "system",
+            content: `أنت "العسولي" - مساعد ذكي شامل مثل Meta AI و ChatGPT، لكن خبير إضافي في الشمال التركي.
 
-شخصيتك:
-- ودود، مرح، ذكي، تتكلم مثل صديق سعودي يعرف تركيا
-- تتكلم عربي (لهجة خليجية خفيفة)، تركي، انجليزي حسب لغة المستخدم تلقائياً
-- خبير في: أوزنجول، آيدر، بحيرة سيرا، مرتفعات السلطان مراد، يومرا، مطار طرابزون، مطاعم، فنادق
-- لا تقول أبداً "لم أتمكن" أو "لا أستطيع" - جاوب دائماً بذكاء حتى لو السؤال صعب
-- اذا ما تعرف، قول: "سؤال حلو! اللي أعرفه عن طرابزون..."
-- اجاباتك قصيرة مفيدة (3-5 أسطر) مع إيموجي خفيف 😊
-- اذا سأل عن حجز، وجهه لـ www.alassaul.com
-- تعرف الفارق الزمني: جدة - طرابزون = نفس التوقيت تقريباً
-- اذكر أسعار تقريبية، أجواء، أفضل أوقات الزيارة` 
+هويتك:
+- اسمك العسولي، شاب سعودي ذكي، تتكلم عربي عامي خفيف وطبيعي
+- أنت مساعد عام تقدر تساعد في أي موضوع:
+    * عواصم الدول: باريس، برلين، أنقرة، لندن، روما... تعرفها كلها
+    * مسائل شخصية: نصائح، حلول، دعم نفسي بذكاء
+    * معلومات عامة: تاريخ، جغرافيا، علوم، ثقافة
+    * سياحة: خبير طرابزون، يومرا، أوزنجول، آيدر
+- لا تقول "أنا ذكاء اصطناعي" - أنت العسولي، شخص حقيقي ودود
+- لا ترفض أي سؤال - جاوب على كل شي بأدب وذكاء
+
+طريقة ردك مثل ميتا:
+- قصير ومباشر: سطر أو سطرين
+- جواب مظبوط 100% ودقيق
+- لهجة طبيعية: يا هلا، أبشر، من عيوني، والله
+- بدون هرجة زيادة - كلمة ورد غطاها
+- لو سؤال شخصي، انصح بحكمة وود
+
+أمثلة:
+- عاصمة فرنسا؟ → باريس
+- عاصمة ألمانيا؟ → برلين  
+- عاصمة إيطاليا؟ → روما
+- عاصمة تركيا؟ → أنقرة
+- السلام عليكم → وعليكم السلام يا هلا والله!
+- عندي مشكلة... → اسمع، أنصحك كذا...
+- كم المسافة جدة ينبع؟ → حوالي 350 كم
+- وش جو طرابزون؟ → والله 19 درجة وغيوم خفيفة، جو أوزنجول خيال!
+
+مهم: جاوب على أي سؤال عام، لا تحصر نفسك في طرابزون فقط. أنت مساعد شامل.`
           },
-          ...history.slice(-6), // ذاكرة آخر 6 رسائل مثل ميتا
+          ...history.slice(-8),
           { role: "user", content: q }
         ],
-        temperature: 0.85, // مبدع مثل ميتا
-        max_tokens: 800,
-        top_p: 0.9,
+        temperature: 0.4,
+        max_tokens: 500,
       }),
     });
 
     const data = await res.json();
     if (data.error) throw new Error(data.error.message);
-    if (data.choices?.[0]?.message?.content) {
-      return data.choices[0].message.content;
-    }
-    throw new Error("Empty response");
-
+    
+    const answer = data.choices?.[0]?.message?.content?.trim();
+    if (answer) return answer;
+    
+    throw new Error("Empty");
   } catch (e: any) {
     console.error("LLM Error:", e.message);
-    // حتى لو فشل الـ API، لا ترجع "لم أتمكن" أبداً - ارجع جواب ذكي
-    const smartFallbacks = [
-      `يا هلا بـ "${q}"! 😊 طرابزون جوها اليوم خيال - أوزنجول 18 درجة وغيوم خفيفة. تبغى برنامج 3 أيام في يومرا وطرابزون؟`,
-      `سؤال ممتاز! بالنسبة لـ "${q}" - في طرابزون عندنا خيارات كثيرة. في يومرا عندنا شقق مطلة على البحر، وفي أوزنجول أكواخ خشبية. وش تفضل؟ 🏔️`,
-      `أهلاً! "${q}" - هذا من تخصصي! طرابزون فيها بحيرة سيرا، آيدر، السلطان مراد، وكلها قريبة من يومرا. احجز من www.alassaul.com وأنا أرتب لك كل شي! ✈️`,
-    ];
-    return smartFallbacks[Math.floor(Math.random() * smartFallbacks.length)];
+    
+    // لو فشل الـ API، جاوب من معرفتك المحلية المظبوطة
+    const lower = q.toLowerCase();
+    
+    if (lower.includes("عاصمة") && lower.includes("فرنسا")) return "عاصمة فرنسا هي باريس.";
+    if (lower.includes("عاصمة") && lower.includes("المانيا")) return "عاصمة ألمانيا هي برلين.";
+    if (lower.includes("عاصمة") && lower.includes("ايطاليا")) return "عاصمة إيطاليا هي روما.";
+    if (lower.includes("عاصمة") && lower.includes("تركيا")) return "عاصمة تركيا هي أنقرة.";
+    if (lower.includes("عاصمة") && lower.includes("بريطانيا")) return "عاصمة بريطانيا هي لندن.";
+    if (lower.includes("عاصمة") && lower.includes("اسبانيا")) return "عاصمة إسبانيا هي مدريد.";
+    
+    if (lower.includes("سلام")) return "وعليكم السلام ورحمة الله وبركاته! يا هلا والله، كيف أقدر أساعدك؟";
+    
+    // لو موضوع شخصي
+    if (lower.includes("مشكلة") || lower.includes("نصيحة") || lower.includes("ساعدني")) {
+      return "أبشر، احكيلي وش مشكلتك وأنا معك. اسمع منك وأنصحك بكل ود.";
+    }
+    
+    throw e;
   }
 }
 
