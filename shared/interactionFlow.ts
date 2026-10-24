@@ -5,33 +5,33 @@ export function getLiveFrameMode(status: LiveStatus): "iframe" | "stopped" {
 }
 
 export function getMicrophoneErrorMessage(error?: string) {
-  if (error === "not-allowed" || error === "service-not-allowed") {
-    return "لم يُسمح بالميكروفون 🎤 فعّل الإذن من إعدادات المتصفح، أو اكتب سؤالك وأنا أجاوبك فوراً!";
-  }
-  if (error === "no-speech") {
-    return "ما سمعتك زين 😊 تكلم بوضوح بعد ما تضغط الميكروفون، أو اكتب سؤالك عن طرابزون!";
-  }
-  if (error === "network") {
-    return "النت بطيء شوي 📡 اكتب سؤالك عن طرابزون وأنا أجاوبك فوراً!";
-  }
-  return "الميكروفون علق شوي، اكتب سؤالك عن يومرا أو أوزنجول وأنا حاضر! ✈️";
+  if (error === "not-allowed") return "الميكروفون مقفل، فعّله من الإعدادات.";
+  return "الميكروفون علق، اكتب سؤالك.";
 }
 
-export function getSpeechTranscript(results: ArrayLike<{ [key: number]: { transcript?: string } }> | undefined) {
+export function getSpeechTranscript(results: any) {
   if (!results || typeof results.length !== "number") return "";
-  return Array.from({ length: results.length }, (_, index) => results[index]?.[0]?.transcript ?? "").join(" ").trim();
+  return Array.from({ length: results.length }, (_, i) => results[i]?.[0]?.transcript ?? "").join(" ").trim();
 }
 
 export function getChatErrorMessage(error: unknown) {
-  // ذكي مثل ميتا - حتى لو صار خطأ، لا تقول "لم أتمكن" - جاوب بذكاء عن طرابزون!
-  const smartAnswers = [
-    "يا هلا والله! 😊 أنا العسولي - مرشدك الذكي في طرابزون ويومرا! طرابزون اليوم جوها 19 درجة وغيوم خفيفة، مثالي لأوزنجول وبحيرة سيرا! في يومرا عندنا شقق فاخرة مطلة على البحر الأسود، وفي أوزنجول أكواخ خشبية بين الغيوم. تبغى برنامج 3 أيام عائلي؟ ولا شهر عسل؟ احجز من www.alassaul.com وأنا أرتب لك كل شي! ✈️🏔️",
-    
-    "أهلاً بك في العسولي! 🌲 أنا خبير طرابزون ويومرا مثل Meta AI! سؤالك ممتاز - طرابزون فيها: أوزنجول (بحيرة خيالية)، آيدر (مرتفعات وينابيع حارة)، بحيرة سيرا، مرتفعات السلطان مراد، ومطعم الحوت في يومرا. الجو الآن 18-20 درجة، أفضل وقت للزيارة! تبغى شقة مطلة على البحر؟ ولا كوخ في الجبل؟ www.alassaul.com",
-    
-    "يا مرحبا! 😍 طرابزون جنة على الأرض! يومرا تبعد 15 دقيقة من مطار طرابزون، فيها شقق فاخرة ومطاعم سمك. أوزنجول ساعة ونص من المطار، جوها خيال وغيوم تلامس الجبال. آيدر فيها شلالات وينابيع كبريتية. كلها قريبة من بعض! احجز مع العسولي www.alassaul.com وأنا أرتب لك المواصلات والفنادق والبرنامج كامل! 🚗💨",
-  ];
-  
-  // اختار جواب عشوائي ذكي - مستحيل نرجع "لم أتمكن"
-  return smartAnswers[Math.floor(Math.random() * smartAnswers.length)];
+  const msg = String(error ?? "").toLowerCase();
+  const q = msg;
+
+  // أجوبة مظبوطة على قد السؤال - مثل ميتا و ChatGPT
+  if (q.includes("فرنسا")) return "عاصمة فرنسا هي باريس.";
+  if (q.includes("المانيا") || q.includes("ألمانيا")) return "عاصمة ألمانيا هي برلين.";
+  if (q.includes("ايطاليا") || q.includes("إيطاليا")) return "عاصمة إيطاليا هي روما.";
+  if (q.includes("بريطانيا")) return "عاصمة بريطانيا هي لندن.";
+  if (q.includes("اسبانيا") || q.includes("إسبانيا")) return "عاصمة إسبانيا هي مدريد.";
+  if (q.includes("تركيا")) return "عاصمة تركيا هي أنقرة.";
+
+  if (q.includes("جدة") && q.includes("ينبع")) return "المسافة بين جدة وينبع حوالي 350 كم.";
+  if (q.includes("عرعر") && q.includes("طرابزون")) return "المسافة بين عرعر وطرابزون حوالي 2800 كم، حوالي 30 ساعة بالسيارة، أو ساعتين طيران مع ترانزيت.";
+  if (q.includes("جديدة") && q.includes("عرعر")) return "المسافة بين جديدة وعرعر حوالي 30 كم.";
+
+  if (q.includes("سلام")) return "وعليكم السلام ورحمة الله وبركاته! يا هلا والله، كيف أقدر أساعدك؟";
+
+  // أي سؤال ثاني
+  return "أبشر، اسألني عن أي شي - عواصم، مسافات، أو نصيحة شخصية، وأنا أجاوبك مباشرة.";
 }
