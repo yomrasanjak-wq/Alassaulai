@@ -12,14 +12,14 @@ type AssistantReplyProps = {
 const speechLanguage = { AR: "ar-SA", TR: "tr-TR", EN: "en-US" };
 
 function cleanSpeechText(text: string) {
+  if (!text) return "مرحبا";
   return text
     .replace(/```[\s\S]*?```/g, "")
     .replace(/[*_#`]/g, "")
     .replace(/\[(.*?)\]\(.*?\)/g, "$1")
     .replace(/\s+/g, " ")
     .trim()
-    .split(/[.!؟?]/)[0] // ناخذ أول جملة بس عشان ما يقطع
-    .substring(0, 180);
+    .substring(0, 250); // لا تقطع الجملة
 }
 
 export function AssistantReply({ text, language, autoSpeak = false, voiceGender = "male" }: AssistantReplyProps) {
@@ -27,13 +27,28 @@ export function AssistantReply({ text, language, autoSpeak = false, voiceGender 
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
-  // حمّل الأصوات مرة وحدة بس في الخلفية، مو كل مرة
   useEffect(() => {
-    const loadVoices = () => setVoices(window.speechSynthesis?.getVoices() || []);
+    const loadVoices = () => {
+      const v = window.speechSynthesis?.getVoices() || [];
+      if (v.length > 0) setVoices(v);
+    };
     loadVoices();
     window.speechSynthesis?.addEventListener("voiceschanged", loadVoices);
-    return () => window.speechSynthesis?.removeEventListener("voiceschanged", loadVoices);
+    // حاول مرة ثانية بعد ثانية للسامسونج
+    const timer = setTimeout(loadVoices, 1000);
+    return () => {
+      window.speechSynthesis?.removeEventListener("voiceschanged", loadVoices);
+      clearTimeout(timer);
+    };
   }, []);
+
+  // شغل الصوت تلقائي لو autoSpeak = true
+  useEffect(() => {
+    if (autoSpeak && text) {
+      const t = setTimeout(() => speak(), 500);
+      return () => clearTimeout(t);
+    }
+  }, [text, autoSpeak, voices]);
 
   const stopSpeaking = () => {
     window.speechSynthesis?.cancel();
@@ -43,21 +58,30 @@ export function AssistantReply({ text, language, autoSpeak = false, voiceGender 
   const speak = () => {
     if (typeof window === "undefined") return;
     const synthesis = window.speechSynthesis;
-    if (!synthesis) return;
+    if (!synthesis) {
+      alert("المتصفح ما يدعم الصوت");
+      return;
+    }
     
     synthesis.cancel();
+    setIsSpeaking(false);
+    
     setTimeout(() => {
-      const spokenText = cleanSpeechText(text);
-      if (!spokenText) return;
+      let spokenText = cleanSpeechText(text);
+      // لو النص فاضي أو فيه "أبشر أعد سؤالك" - قول مرحبا
+      if (!spokenText || spokenText.includes("أعد سؤالك")) {
+        spokenText = "مرحبا";
+      }
 
       const utterance = new SpeechSynthesisUtterance(spokenText);
-      utterance.lang = speechLanguage[language];
-      utterance.rate = 1; // 1 مو 0.9 عشان سامسونج ما يقطع
+      utterance.lang = speechLanguage[language] || "ar-SA";
+      utterance.rate = 1;
       utterance.pitch = 1;
       utterance.volume = 1;
       
-      // اختيار صوت خفيف وسريع بدون حسابات ثقيلة
-      const arVoice = voices.find(v => v.lang.toLowerCase().includes("ar")) || voices[0];
+      // اختار صوت عربي لو موجود
+      const allVoices = synthesis.getVoices();
+      const arVoice = allVoices.find(v => v.lang.toLowerCase().includes("ar")) || allVoices[0];
       if (arVoice) utterance.voice = arVoice;
       
       utterance.onstart = () => setIsSpeaking(true);
@@ -66,7 +90,7 @@ export function AssistantReply({ text, language, autoSpeak = false, voiceGender 
       
       utteranceRef.current = utterance;
       synthesis.speak(utterance);
-    }, 100); // مهلة 100 ملي ثانية عشان الشاشة ما تعلق
+    }, 150);
   };
 
   return (
@@ -75,13 +99,13 @@ export function AssistantReply({ text, language, autoSpeak = false, voiceGender 
       type="button"
       style={{ 
         display: "flex", alignItems: "center", gap: "4px",
-        padding: "4px 8px", borderRadius: "12px",
-        border: "1px solid #e5e7eb", background: "#fff",
-        fontSize: "12px", cursor: "pointer"
+        padding: "6px 10px", borderRadius: "12px",
+        border: "1px solid #10b981", background: "#ecfdf5",
+        fontSize: "12px", cursor: "pointer", color: "#065f46"
       }}
     >
-      {isSpeaking ? <Pause size={13} /> : <Volume2 size={13} />}
-      <small>{isSpeaking ? "إيقاف" : "استماع"}</small>
+      {isSpeaking ? <Pause size={14} /> : <Volume2 size={14} />}
+      <small>{isSpeaking ? "إيقاف" : "استماع 🔊"}</small>
     </button>
   );
 }
