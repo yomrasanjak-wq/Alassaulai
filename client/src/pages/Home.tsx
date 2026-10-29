@@ -78,7 +78,14 @@ import {
 const ASSETS = {
   hero: "/images/hero.webp",
   trabzon: "/images/trabzon.webp",
+  modernTrabzon: "/images/modern-trabzon.webp",
+  yomra: "/images/yomra.webp",
   ayder: "/images/ayder.webp",
+  uzungol: "/images/modern-uzungol.webp",
+  ordu: "/images/modern-ordu.webp",
+  samsun: "/images/modern-samsun.webp",
+  istanbul: "/images/modern-istanbul.webp",
+  rize: "/images/modern-rize.webp",
   mark: "/logo.png?gold-v2-20261014",
   officialRobot: "/robot.png",
 };
@@ -460,21 +467,21 @@ type CameraFeed = {
 };
 
 const cameraFeeds: CameraFeed[] = [
-  { title: "مجموعة أوردو", meta: "أكشاتِبه وساحل طاشباشي · بلدية ألتِن أوردو", cameraId: "ordu-group", playerUrl: "https://www.altinordu.bel.tr/sehir-kameralari", sourceType: "official-page", image: ASSETS.ayder },
-  { title: "مجموعة طرابزون", meta: "ميدان وبوزتبه وسوميلا وبقية مشاهد البلدية", cameraId: "trabzon-group", playerUrl: "https://www.trabzon.bel.tr/Web/SehirKameralari", sourceType: "official-page", image: ASSETS.hero },
-  { title: "مجموعة يومرا", meta: "مركز يومرا والحدائق والأحياء والمرتفعات", cameraId: "yomra-group", playerUrl: "https://www.yomra.bel.tr/Sayfa/13/canli-yayin", sourceType: "official-page", image: ASSETS.ayder },
-  { title: "كمرة مسجد أوزنجول", meta: "مشهد المسجد · اختيار Uzungöl من صفحة بلدية طرابزون الرسمية", cameraId: "uzungol-mosque-3049", playerUrl: "https://www.trabzon.bel.tr/Web/SehirKameralari#camera-3049", sourceType: "official-page", image: ASSETS.hero },
-  { title: "كمرة بحيرة أوزنجول", meta: "مشهد البحيرة · اختيار Uzungöl من صفحة بلدية طرابزون الرسمية", cameraId: "uzungol-lake-3049", playerUrl: "https://www.trabzon.bel.tr/Web/SehirKameralari#camera-3049", sourceType: "official-page", image: ASSETS.trabzon },
-  { title: "كمرة قرية أوزنجول", meta: "مشهد القرية · اختيار Uzungöl من صفحة بلدية طرابزون الرسمية", cameraId: "uzungol-village-3049", playerUrl: "https://www.trabzon.bel.tr/Web/SehirKameralari#camera-3049", sourceType: "official-page", image: ASSETS.ayder },
-  { title: "مجموعة سامسون", meta: "نصب أونور وساعات هانه والأرصفة وأميسوس", cameraId: "samsun-group", playerUrl: "https://mobil.samsun.bel.tr/canliizle.html", sourceType: "official-page", image: ASSETS.hero },
-  { title: "مجموعة إسطنبول", meta: "كاميرات بلدية إسطنبول السياحية والمرورية", cameraId: "istanbul-group", playerUrl: "https://ibb.istanbul/tum-hizmetler/e-belediye-hizmetleri/e-bilgi/kameralar/", sourceType: "official-page", image: ASSETS.trabzon },
-  { title: "كاميرا ميدان تقسيم", meta: "إطلالة مباشرة على ميدان تقسيم وشارع الاستقلال · بلدية إسطنبول", cameraId: "istanbul-taksim", playerUrl: "https://istanbuluseyret.ibb.istanbul/tr/turistik-kamera/taksim-meydan", sourceType: "official-page", image: ASSETS.trabzon },
-  { title: "كاميرا كاديكوي", meta: "رصيف كاديكوي وحركة العبارات في الجانب الآسيوي · بلدية إسطنبول", cameraId: "istanbul-kadikoy", playerUrl: "https://istanbuluseyret.ibb.istanbul/tr/turistik-kamera/kadikoy", sourceType: "official-page", image: ASSETS.hero },
-  { title: "كاميرا إمينونو", meta: "إمينونو ومصر بازار والواجهة البحرية · بلدية إسطنبول", cameraId: "istanbul-eminonu", playerUrl: "https://istanbuluseyret.ibb.istanbul/tr/turistik-kamera/eminonu", sourceType: "official-page", image: ASSETS.trabzon },
-  { title: "كاميرا أناضولو حصاري", meta: "إطلالة على مضيق البوسفور · بلدية إسطنبول", cameraId: "istanbul-anadolu-hisari", playerUrl: "https://istanbuluseyret.ibb.istanbul/tr/turistik-kamera/anadolu-hisari", sourceType: "official-page", image: ASSETS.hero },
-  { title: "كاميرا تلة تشامليجا", meta: "مشهد إسطنبول والبوسفور من تلة تشامليجا · بلدية إسطنبول", cameraId: "istanbul-buyuk-camlica", playerUrl: "https://istanbuluseyret.ibb.istanbul/tr/turistik-kamera/buyuk-camlica", sourceType: "official-page", image: ASSETS.ayder },
-  { title: "كاميرا أوسكودار", meta: "واجهة أوسكودار وبرج الفتاة · بلدية إسطنبول", cameraId: "istanbul-uskudar", playerUrl: "https://istanbuluseyret.ibb.istanbul/tr/turistik-kamera/uskudar", sourceType: "official-page", image: ASSETS.trabzon },
-  { title: "مجموعة ريزا وآيدر", meta: "تشامليهمشين وآيدر · بوابة البلدية الرسمية", cameraId: "rize-ayder-group", playerUrl: "https://camlihemsin.bel.tr/", sourceType: "official-page", image: ASSETS.ayder },
+  { title: "مجموعة أوردو", meta: "أكشاتِبه وساحل طاشباشي · بلدية ألتِن أوردو", cameraId: "ordu-group", playerUrl: "https://www.altinordu.bel.tr/sehir-kameralari", sourceType: "official-page", image: ASSETS.ordu },
+  { title: "مجموعة طرابزون", meta: "ميدان وبوزتبه وسوميلا وبقية مشاهد البلدية", cameraId: "trabzon-group", playerUrl: "https://www.trabzon.bel.tr/Web/SehirKameralari", sourceType: "official-page", image: ASSETS.modernTrabzon },
+  { title: "مجموعة يومرا", meta: "مركز يومرا والحدائق والأحياء والمرتفعات", cameraId: "yomra-group", playerUrl: "https://www.yomra.bel.tr/Sayfa/13/canli-yayin", sourceType: "official-page", image: ASSETS.yomra },
+  { title: "كمرة مسجد أوزنجول", meta: "مشهد المسجد · اختيار Uzungöl من صفحة بلدية طرابزون الرسمية", cameraId: "uzungol-mosque-3049", playerUrl: "https://www.trabzon.bel.tr/Web/SehirKameralari#camera-3049", sourceType: "official-page", image: ASSETS.uzungol },
+  { title: "كمرة بحيرة أوزنجول", meta: "مشهد البحيرة · اختيار Uzungöl من صفحة بلدية طرابزون الرسمية", cameraId: "uzungol-lake-3049", playerUrl: "https://www.trabzon.bel.tr/Web/SehirKameralari#camera-3049", sourceType: "official-page", image: ASSETS.uzungol },
+  { title: "كمرة قرية أوزنجول", meta: "مشهد القرية · اختيار Uzungöl من صفحة بلدية طرابزون الرسمية", cameraId: "uzungol-village-3049", playerUrl: "https://www.trabzon.bel.tr/Web/SehirKameralari#camera-3049", sourceType: "official-page", image: "/images/uzungol.webp" },
+  { title: "مجموعة سامسون", meta: "نصب أونور وساعات هانه والأرصفة وأميسوس", cameraId: "samsun-group", playerUrl: "https://mobil.samsun.bel.tr/canliizle.html", sourceType: "official-page", image: ASSETS.samsun },
+  { title: "مجموعة إسطنبول", meta: "كاميرات بلدية إسطنبول السياحية والمرورية", cameraId: "istanbul-group", playerUrl: "https://ibb.istanbul/tum-hizmetler/e-belediye-hizmetleri/e-bilgi/kameralar/", sourceType: "official-page", image: ASSETS.istanbul },
+  { title: "كاميرا ميدان تقسيم", meta: "إطلالة مباشرة على ميدان تقسيم وشارع الاستقلال · بلدية إسطنبول", cameraId: "istanbul-taksim", playerUrl: "https://istanbuluseyret.ibb.istanbul/tr/turistik-kamera/taksim-meydan", sourceType: "official-page", image: ASSETS.istanbul },
+  { title: "كاميرا كاديكوي", meta: "رصيف كاديكوي وحركة العبارات في الجانب الآسيوي · بلدية إسطنبول", cameraId: "istanbul-kadikoy", playerUrl: "https://istanbuluseyret.ibb.istanbul/tr/turistik-kamera/kadikoy", sourceType: "official-page", image: ASSETS.istanbul },
+  { title: "كاميرا إمينونو", meta: "إمينونو ومصر بازار والواجهة البحرية · بلدية إسطنبول", cameraId: "istanbul-eminonu", playerUrl: "https://istanbuluseyret.ibb.istanbul/tr/turistik-kamera/eminonu", sourceType: "official-page", image: ASSETS.istanbul },
+  { title: "كاميرا أناضولو حصاري", meta: "إطلالة على مضيق البوسفور · بلدية إسطنبول", cameraId: "istanbul-anadolu-hisari", playerUrl: "https://istanbuluseyret.ibb.istanbul/tr/turistik-kamera/anadolu-hisari", sourceType: "official-page", image: ASSETS.istanbul },
+  { title: "كاميرا تلة تشامليجا", meta: "مشهد إسطنبول والبوسفور من تلة تشامليجا · بلدية إسطنبول", cameraId: "istanbul-buyuk-camlica", playerUrl: "https://istanbuluseyret.ibb.istanbul/tr/turistik-kamera/buyuk-camlica", sourceType: "official-page", image: ASSETS.istanbul },
+  { title: "كاميرا أوسكودار", meta: "واجهة أوسكودار وبرج الفتاة · بلدية إسطنبول", cameraId: "istanbul-uskudar", playerUrl: "https://istanbuluseyret.ibb.istanbul/tr/turistik-kamera/uskudar", sourceType: "official-page", image: ASSETS.istanbul },
+  { title: "مجموعة ريزا وآيدر", meta: "تشامليهمشين وآيدر · بوابة البلدية الرسمية", cameraId: "rize-ayder-group", playerUrl: "https://camlihemsin.bel.tr/", sourceType: "official-page", image: ASSETS.rize },
 ];
 
 const copy: Record<Language, Record<string, string>> = {
