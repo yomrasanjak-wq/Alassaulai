@@ -1499,32 +1499,6 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="top" className="hero-section">
-        <div className="container hero-grid">
-          <div className="hero-copy">
-            <div className="hero-kicker"><span className="gold-line" /> {t.eyebrow}</div>
-            <h1>{t.heroTitle}</h1>
-            <p>{t.heroDesc}</p>
-            <div className="hero-cta-row">
-              <button className="button button-primary" onClick={() => { setDiscoveryImageLoaded(false); setDiscoveryIndex(0); setDiscoveryOpen(true); }}>{t.explore} <ArrowLeft size={17} /></button>
-              <button className="button button-quiet camera-hero-button" onClick={() => scrollTo("cameras")}><span className="camera-cta-thumb"><img src={cameraFeeds[0]?.image} alt="" /></span> {t.viewLive}</button>
-              <button className="button button-assistant" onClick={() => setChatOpen(true)}><span className="assistant-button-avatar"><img src={ASSETS.officialRobot} alt="" /></span> {t.askAssistant}</button>
-            </div>
-            <div className="hero-proof"><span><ShieldCheck size={15} /> 8 مدن موثقة</span><span><Clock3 size={15} /> تحديثات يومية</span><span><Sparkles size={15} /> مساعد ذكي</span></div>
-          </div>
-          <div id="map" className="hero-visual hero-map-replacement" aria-label="الخريطة التفاعلية للشمال التركي">
-            <InteractiveNorthMap />
-          </div>
-        </div>
-        <div className="container hero-entry-only" aria-label="مسارات الاستكشاف السريعة">
-          <button onClick={() => scrollTo("cities")}><MapPin size={14} /><span><strong>وجهات موثوقة</strong><small>ابدأ من المدينة المناسبة</small></span><ArrowLeft size={13} /></button>
-          <button onClick={() => scrollTo("map")}><Navigation size={14} /><span><strong>خريطة يومك</strong><small>رتّب الطريق على الخريطة</small></span><ArrowLeft size={13} /></button>
-          <button onClick={() => setChatOpen(true)}><span className="assistant-button-avatar assistant-button-avatar-small"><img src={ASSETS.officialRobot} alt="" /></span><span><strong>مساعد الرحلة</strong><small>اسأل عن الطريق والمكان</small></span><ArrowLeft size={13} /></button>
-          <a className="gmail-shortcut" href="https://mail.google.com/mail/u/0/" target="_blank" rel="noreferrer" aria-label="فتح Gmail في تبويب جديد"><span className="gmail-shortcut-icon"><Mail size={18} /></span><span><strong>Gmail</strong><small>افتح بريدك بأمان</small></span><ExternalLink size={13} /></a>
-        </div>
-
-      </section>
-
       <div className="container search-wrap global-search-dock">
         <form className="search-box" role="search" onSubmit={(event) => { event.preventDefault(); submitGlobalSearch("web"); }}>
           <Search size={20} aria-hidden="true" />
@@ -1559,6 +1533,34 @@ export default function Home() {
         </div>}
         <span className="search-hint"><Compass size={13} /> {t.searchHint}</span>
       </div>
+
+      <section id="top" className="hero-section">
+        <div className="container hero-grid">
+          <div className="hero-copy">
+            <div className="hero-kicker"><span className="gold-line" /> {t.eyebrow}</div>
+            <h1>{t.heroTitle}</h1>
+            <p>{t.heroDesc}</p>
+            <div className="hero-cta-row">
+              <button className="button button-primary" onClick={() => { setDiscoveryImageLoaded(false); setDiscoveryIndex(0); setDiscoveryOpen(true); }}>{t.explore} <ArrowLeft size={17} /></button>
+              <button className="button button-quiet camera-hero-button" onClick={() => scrollTo("cameras")}><span className="camera-cta-thumb"><img src={cameraFeeds[0]?.image} alt="" /></span> {t.viewLive}</button>
+              <button className="button button-assistant" onClick={() => setChatOpen(true)}><span className="assistant-button-avatar"><img src={ASSETS.officialRobot} alt="" /></span> {t.askAssistant}</button>
+            </div>
+            <div className="hero-proof"><span><ShieldCheck size={15} /> 8 مدن موثقة</span><span><Clock3 size={15} /> تحديثات يومية</span><span><Sparkles size={15} /> مساعد ذكي</span></div>
+          </div>
+          <div id="map" className="hero-visual hero-map-replacement" aria-label="الخريطة التفاعلية للشمال التركي">
+            <InteractiveNorthMap />
+          </div>
+        </div>
+        <div className="container hero-entry-only" aria-label="مسارات الاستكشاف السريعة">
+          <button onClick={() => scrollTo("cities")}><MapPin size={14} /><span><strong>وجهات موثوقة</strong><small>ابدأ من المدينة المناسبة</small></span><ArrowLeft size={13} /></button>
+          <button onClick={() => scrollTo("map")}><Navigation size={14} /><span><strong>خريطة يومك</strong><small>رتّب الطريق على الخريطة</small></span><ArrowLeft size={13} /></button>
+          <button onClick={() => setChatOpen(true)}><span className="assistant-button-avatar assistant-button-avatar-small"><img src={ASSETS.officialRobot} alt="" /></span><span><strong>مساعد الرحلة</strong><small>اسأل عن الطريق والمكان</small></span><ArrowLeft size={13} /></button>
+          <a className="gmail-shortcut" href="https://mail.google.com/mail/u/0/" target="_blank" rel="noreferrer" aria-label="فتح Gmail في تبويب جديد"><span className="gmail-shortcut-icon"><Mail size={18} /></span><span><strong>Gmail</strong><small>افتح بريدك بأمان</small></span><ExternalLink size={13} /></a>
+        </div>
+
+      </section>
+
+
 
       <LiveBroadcastSection />
 
