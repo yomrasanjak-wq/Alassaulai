@@ -1487,40 +1487,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="search-wrap global-search-dock">
-          <form className="search-box" role="search" onSubmit={(event) => { event.preventDefault(); submitGlobalSearch("web"); }}>
-            <Search size={20} aria-hidden="true" />
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder={t.searchPlaceholder}
-              aria-label="بحث عالمي عن الأماكن والخدمات"
-              autoComplete="off"
-            />
-            <button type="submit">بحث عالمي</button>
-            <button type="button" onClick={() => submitGlobalSearch("maps")} aria-label="ابحث عن هذا المكان في الخرائط"><MapPin size={18} /><span>الخرائط</span></button>
-            <button type="button" onClick={searchNearMe} aria-label="ابحث عن الأماكن حول موقعي"><Navigation size={18} /><span>قريب مني</span></button>
-          </form>
-          {search.trim() && <div className="search-results" role="listbox" aria-label="نتائج دليل ALASSAUL والبحث العالمي">
-            {searchResults.length > 0 ? searchResults.map((result, index) => (
-              <button type="button" role="option" aria-selected="false" key={`${result.city.name}-${result.place}-${index}`} onClick={() => selectSearchResult(result)}>
-                <MapPin size={17} />
-                <span><strong>{result.place}</strong><small>{result.city.name} · نتيجة من دليل ALASSAUL</small></span>
-                <ArrowLeft size={15} />
-              </button>
-            )) : (
-              <div className="search-empty" role="status">
-                <span><strong>لا توجد نتيجة مطابقة في دليلنا المحلي بعد</strong><small>يمكنك متابعة البحث عن هذا الطلب في جميع أنحاء العالم.</small></span>
-              </div>
-            )}
-            {!searchResults.length && <button type="button" role="option" aria-selected="false" onClick={() => submitGlobalSearch("maps")}>
-              <Search size={17} />
-              <span><strong>تابع البحث في الخرائط العالمية</strong><small>ابحث عن هذا الطلب خارج دليل ALASSAUL</small></span>
-              <ExternalLink size={15} />
-            </button>}
-          </div>}
-          <span className="search-hint"><Compass size={13} /> {t.searchHint}</span>
-        </div>
+
       </header>
 
       <section className="prayer-ticker" aria-label={language === "AR" ? "شريط الأدعية الدينية" : language === "TR" ? "Dini dualar" : "Religious prayers"}>
@@ -1557,6 +1524,41 @@ export default function Home() {
         </div>
 
       </section>
+
+      <div className="container search-wrap global-search-dock">
+        <form className="search-box" role="search" onSubmit={(event) => { event.preventDefault(); submitGlobalSearch("web"); }}>
+          <Search size={20} aria-hidden="true" />
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder={t.searchPlaceholder}
+            aria-label="بحث عالمي عن الأماكن والخدمات"
+            autoComplete="off"
+          />
+          <button type="submit">بحث عالمي</button>
+          <button type="button" onClick={() => submitGlobalSearch("maps")} aria-label="ابحث عن هذا المكان في الخرائط"><MapPin size={18} /><span>الخرائط</span></button>
+          <button type="button" onClick={searchNearMe} aria-label="ابحث عن الأماكن حول موقعي"><Navigation size={18} /><span>قريب مني</span></button>
+        </form>
+        {search.trim() && <div className="search-results" role="listbox" aria-label="نتائج دليل ALASSAUL والبحث العالمي">
+          {searchResults.length > 0 ? searchResults.map((result, index) => (
+            <button type="button" role="option" aria-selected="false" key={`${result.city.name}-${result.place}-${index}`} onClick={() => selectSearchResult(result)}>
+              <MapPin size={17} />
+              <span><strong>{result.place}</strong><small>{result.city.name} · نتيجة من دليل ALASSAUL</small></span>
+              <ArrowLeft size={15} />
+            </button>
+          )) : (
+            <div className="search-empty" role="status">
+              <span><strong>لا توجد نتيجة مطابقة في دليلنا المحلي بعد</strong><small>يمكنك متابعة البحث عن هذا الطلب في جميع أنحاء العالم.</small></span>
+            </div>
+          )}
+          {!searchResults.length && <button type="button" role="option" aria-selected="false" onClick={() => submitGlobalSearch("maps")}>
+            <Search size={17} />
+            <span><strong>تابع البحث في الخرائط العالمية</strong><small>ابحث عن هذا الطلب خارج دليل ALASSAUL</small></span>
+            <ExternalLink size={15} />
+          </button>}
+        </div>}
+        <span className="search-hint"><Compass size={13} /> {t.searchHint}</span>
+      </div>
 
       <LiveBroadcastSection />
 
