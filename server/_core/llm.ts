@@ -640,3 +640,46 @@ export async function invokeLLM(question: string): Promise<string> {
 }
 
 export const askAssoul = invokeLLM;
+
+
+/** Send bounded conversation history to the model while preserving the legacy
+ * one-question API used by older callers. Image parts are passed through to
+ * providers that support vision; unsupported providers fail safely. */
+export async function invokeLLMConversation(
+  messages: Message[],
+  options: { model?: string; maxCompletionTokens?: number } = {},
+): Promise<string> {
+  const primaryModel = options.model?.trim() || ENV.primaryModel;
+  const backupModel = ENV.backupModel?.trim() &&
+    ENV.backupModel.trim().toLowerCase() !== primaryModel?.trim().toLowerCase()
+      ? ENV.backupModel.trim()
+      : undefined;
+  const request: InvokeParams = {
+    messages,
+    max_completion_tokens: options.maxCompletionTokens ?? 512,
+    ...(primaryModel ? { model: primaryModel } : {}),
+  };
+  let result: InvokeResult;
+  try {
+    result = await invokeLLMRequest(request);
+  } catch (primaryError) {
+    if (!backupModel) throw primaryError;
+    try {
+      result = await invokeLLMRequest({ ...request, model: backupModel });
+    } catch (backupError) {
+      console.error("[ALASSAUL chat] conversation providers failed", {
+        primary: primaryError instanceof Error ? primaryError.message : "unknown",
+        backup: backupError instanceof Error ? backupError.message : "unknown",
+      });
+      throw backupError;
+    }
+  }
+  const content = result.choices?.[0]?.message?.content;
+  const answer = typeof content === "string"
+    ? content.trim()
+    : Array.isArray(content)
+      ? content.map(part => part.type === "text" ? part.text : "").join("\n").trim()
+      : "";
+  if (!answer) throw new Error("The language model returned an empty answer");
+  return answer;
+}
