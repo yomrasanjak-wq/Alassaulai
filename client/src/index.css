@@ -2563,7 +2563,7 @@ img { display: block; max-width: 100%; }
 @media (max-width: 640px) {
   .global-search-dock { margin: 8px auto 12px !important; padding-inline: 12px; }
   .global-search-dock .search-box { min-height: 0; gap: 5px; padding: 6px; flex-wrap: wrap; }
-  .global-search-dock .search-box input { min-width: 120px; flex: 1 1 100%; min-height: 34px; }
+  .global-search-dock .search-box input { min-width: 120px; flex: 1 1 140px; min-height: 34px; }
   .global-search-dock .search-box button { min-height: 34px; padding-inline: 10px; flex: 1 1 auto; }
   .global-search-dock .search-results { top: 100%; }
 }
