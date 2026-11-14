@@ -5,6 +5,7 @@
  */
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { buildGlobalSearchUrl, buildNearbySearchUrl } from "@/lib/globalSearch";
 import { ChatComposer } from "@/components/ChatComposer";
 import { AssistantReply, type VoiceGender } from "@/components/AssistantReply";
 import { RouteMapCard } from "@/components/RouteMapCard";
@@ -995,6 +996,38 @@ export default function Home() {
     notify("تم العثور على الوجهة", `${result.place} — ${result.city.name}`, "success");
   }
 
+  function submitGlobalSearch(provider: "web" | "maps" = "web") {
+    const query = search.trim();
+    if (!query) {
+      notify("اكتب ما تريد البحث عنه", "ابحث عن مدينة أو مكان أو خدمة في أي دولة.", "warning");
+      return;
+    }
+    const url = buildGlobalSearchUrl(query, provider);
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
+  function searchNearMe() {
+    if (!navigator.geolocation) {
+      notify("الموقع غير مدعوم", "يمكنك كتابة اسم المدينة أو الحي ثم فتح الخرائط.", "warning");
+      return;
+    }
+    notify("بانتظار إذن الموقع", "لن نستخدم موقعك إلا إذا وافقت من نافذة المتصفح.", "info");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        const url = buildNearbySearchUrl(search, latitude, longitude);
+        window.location.assign(url);
+      },
+      (error) => {
+        const message = error.code === error.PERMISSION_DENIED
+          ? "لم تسمح بالوصول إلى موقعك. يمكنك متابعة البحث بكتابة المدينة أو الحي."
+          : "تعذر تحديد موقعك الآن. حاول مرة أخرى أو ابحث باسم المدينة.";
+        notify("تعذر البحث حول موقعك", message, "warning");
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 },
+    );
+  }
+
   function openPlace(placeName: string) {
     const place = selectedCity.destinations.find((item) => item.name === placeName || item.mapQuery.toLowerCase().includes(placeName.toLowerCase()));
     const resolvedPlace = place ?? destination(placeName, "أنشطة ومغامرات", `${placeName} ${selectedCity.name} Turkey`, `موقع مقترح في ${selectedCity.name}. افتح الخريطة للتحقق من الطريق وساعات الزيارة قبل الانطلاق.`);
@@ -1463,6 +1496,41 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+        <div className="container search-wrap global-search-dock">
+          <form className="search-box" role="search" onSubmit={(event) => { event.preventDefault(); submitGlobalSearch("web"); }}>
+            <Search size={20} aria-hidden="true" />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={t.searchPlaceholder}
+              aria-label="بحث عالمي عن الأماكن والخدمات"
+              autoComplete="off"
+            />
+            <button type="submit">بحث عالمي</button>
+            <button type="button" onClick={() => submitGlobalSearch("maps")} aria-label="ابحث عن هذا المكان في الخرائط"><MapPin size={18} /><span>الخرائط</span></button>
+            <button type="button" onClick={searchNearMe} aria-label="ابحث عن الأماكن حول موقعي"><Navigation size={18} /><span>قريب مني</span></button>
+          </form>
+          {search.trim() && <div className="search-results" role="listbox" aria-label="نتائج دليل ALASSAUL والبحث العالمي">
+            {searchResults.length > 0 ? searchResults.map((result, index) => (
+              <button type="button" role="option" aria-selected="false" key={`${result.city.name}-${result.place}-${index}`} onClick={() => selectSearchResult(result)}>
+                <MapPin size={17} />
+                <span><strong>{result.place}</strong><small>{result.city.name} · نتيجة من دليل ALASSAUL</small></span>
+                <ArrowLeft size={15} />
+              </button>
+            )) : (
+              <div className="search-empty" role="status">
+                <span><strong>لا توجد نتيجة مطابقة في دليلنا المحلي بعد</strong><small>يمكنك متابعة البحث عن هذا الطلب في جميع أنحاء العالم.</small></span>
+              </div>
+            )}
+            {!searchResults.length && <button type="button" role="option" aria-selected="false" onClick={() => submitGlobalSearch("maps")}>
+              <Search size={17} />
+              <span><strong>تابع البحث في الخرائط العالمية</strong><small>ابحث عن هذا الطلب خارج دليل ALASSAUL</small></span>
+              <ExternalLink size={15} />
+            </button>}
+          </div>}
+          <span className="search-hint"><Compass size={13} /> {t.searchHint}</span>
+        </div>
 
       <section id="top" className="hero-section">
         <div className="container hero-grid">
