@@ -2574,3 +2574,72 @@ img { display: block; max-width: 100%; }
   .global-search-dock .search-box button { min-height: 36px; padding-inline: 10px; flex: 0 1 auto; }
   .global-search-dock .search-results { top: 100%; }
 }
+
+/* Header integration pass: preserve the original navigation row and style search as its own aligned row. */
+.site-shell .site-header .global-search-dock {
+  background: transparent !important;
+  padding: 0 20px 12px;
+  margin: 0;
+  width: 100%;
+}
+.site-shell .site-header .global-search-dock .search-box {
+  width: 100%;
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 9px;
+  padding: 6px 10px;
+  background: #fbf8f0;
+  border: 1px solid rgb(218 190 127 / 58%);
+  border-radius: 12px;
+  box-shadow: 0 5px 16px rgb(3 27 22 / 18%);
+}
+.site-shell .site-header .global-search-dock .search-box input {
+  min-width: 0;
+  min-height: 40px;
+  color: #173d36;
+}
+.site-shell .site-header .global-search-dock .search-box button {
+  min-height: 40px;
+  flex: 0 0 auto;
+  padding: 0 13px;
+  border: 1px solid #c8a96b;
+  border-radius: 8px;
+  background: #0e3b35;
+  color: #fff7e5;
+  white-space: nowrap;
+}
+.site-shell .site-header .global-search-dock .search-box button:hover {
+  background: #185447;
+}
+@media (max-width: 740px) {
+  .site-shell .site-header .global-search-dock {
+    padding: 0 10px 10px;
+  }
+  .site-shell .site-header .global-search-dock .search-box {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    padding: 7px;
+  }
+  .site-shell .site-header .global-search-dock .search-box > svg {
+    display: none;
+  }
+  .site-shell .site-header .global-search-dock .search-box input {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-height: 38px;
+    padding: 0 8px;
+  }
+  .site-shell .site-header .global-search-dock .search-box button {
+    width: 100%;
+    min-width: 0;
+    min-height: 38px;
+    padding: 0 5px;
+    font-size: 11px;
+  }
+  .site-shell .site-header .main-nav {
+    top: 100%;
+  }
+}
