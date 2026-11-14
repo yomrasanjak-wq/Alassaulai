@@ -1486,18 +1486,8 @@ export default function Home() {
             <button className="login-button" onClick={() => setModal("login")}><CircleUserRound size={17} /> <span>{t.login}</span></button>
           </div>
         </div>
-      </header>
 
-      <section className="prayer-ticker" aria-label={language === "AR" ? "شريط الأدعية الدينية" : language === "TR" ? "Dini dualar" : "Religious prayers"}>
-        <div className="prayer-ticker-label"><Sparkles size={14} /><span>{language === "AR" ? "ذكر ودعاء" : language === "TR" ? "Dua ve zikir" : "Prayer & remembrance"}</span></div>
-        <div className="prayer-ticker-window">
-          <div className="prayer-ticker-track">
-            {[...prayerTicker, ...prayerTicker].map((prayer, index) => <span className="prayer-ticker-item" key={`${prayer}-${index}`}><i />{prayer}</span>)}
-          </div>
-        </div>
-      </section>
-
-        <div className="container search-wrap global-search-dock">
+        <div className="search-wrap global-search-dock">
           <form className="search-box" role="search" onSubmit={(event) => { event.preventDefault(); submitGlobalSearch("web"); }}>
             <Search size={20} aria-hidden="true" />
             <input
@@ -1531,6 +1521,16 @@ export default function Home() {
           </div>}
           <span className="search-hint"><Compass size={13} /> {t.searchHint}</span>
         </div>
+      </header>
+
+      <section className="prayer-ticker" aria-label={language === "AR" ? "شريط الأدعية الدينية" : language === "TR" ? "Dini dualar" : "Religious prayers"}>
+        <div className="prayer-ticker-label"><Sparkles size={14} /><span>{language === "AR" ? "ذكر ودعاء" : language === "TR" ? "Dua ve zikir" : "Prayer & remembrance"}</span></div>
+        <div className="prayer-ticker-window">
+          <div className="prayer-ticker-track">
+            {[...prayerTicker, ...prayerTicker].map((prayer, index) => <span className="prayer-ticker-item" key={`${prayer}-${index}`}><i />{prayer}</span>)}
+          </div>
+        </div>
+      </section>
 
       <section id="top" className="hero-section">
         <div className="container hero-grid">

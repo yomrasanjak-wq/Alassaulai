@@ -2543,16 +2543,23 @@ img { display: block; max-width: 100%; }
 }
 
 
-/* Global search dock: placed directly below the prayer ticker without shifting the hero. */
+/* Global search is part of the sticky header and spans the viewport. */
 .global-search-dock {
-  margin: 10px auto 14px !important;
-  z-index: 16 !important;
+  position: relative;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0 20px 12px;
+  z-index: 21;
+  background: rgb(246 242 233 / 96%);
 }
 .global-search-dock .search-box {
+  width: 100%;
   min-height: 54px;
-  border-radius: 12px;
+  border-radius: 10px;
   gap: 8px;
   padding-inline: 12px;
+  box-shadow: 0 8px 20px rgb(32 61 48 / 8%);
 }
 .global-search-dock .search-box button {
   min-height: 40px;
@@ -2561,9 +2568,9 @@ img { display: block; max-width: 100%; }
 }
 .global-search-dock .search-hint { margin-inline: 4px; }
 @media (max-width: 640px) {
-  .global-search-dock { margin: 8px auto 12px !important; padding-inline: 12px; }
+  .global-search-dock { padding: 0 10px 10px; }
   .global-search-dock .search-box { min-height: 0; gap: 5px; padding: 6px; flex-wrap: wrap; }
-  .global-search-dock .search-box input { min-width: 120px; flex: 1 1 140px; min-height: 34px; }
-  .global-search-dock .search-box button { min-height: 34px; padding-inline: 10px; flex: 1 1 auto; }
+  .global-search-dock .search-box input { min-width: 130px; flex: 1 1 150px; min-height: 36px; }
+  .global-search-dock .search-box button { min-height: 36px; padding-inline: 10px; flex: 0 1 auto; }
   .global-search-dock .search-results { top: 100%; }
 }
