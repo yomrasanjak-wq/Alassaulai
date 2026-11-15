@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ExternalLink, Filter, MapPin, Navigation, Search, Sparkles, X } from "lucide-react";
+import { ArrowLeft, ExternalLink, Filter, MapPin, Navigation, Search, Sparkles, X } from "lucide-react";
 import { MapView } from "@/components/Map";
 
 type MapCategory = "all" | "cities" | "nature" | "culture" | "family";
@@ -22,15 +22,20 @@ const destinations: MapDestination[] = [
   { name: "أرسين", city: "أرسين", branch: "الساحل والخدمات", latin: "Arsin", category: "cities", label: "ساحل البحر الأسود", note: "بلدة ساحلية شرقي طرابزون؛ تحقق من ساعات عمل الخدمات قبل التوجه.", query: "Arsin Trabzon Turkey", position: { lat: 40.952, lng: 39.93 } },
   { name: "سورميني", city: "سورميني", branch: "الساحل والقرى", latin: "Sürmene", category: "cities", label: "بلدة ساحلية", note: "بلدة على ساحل البحر الأسود شرقي طرابزون، على الطريق باتجاه ريزا.", query: "Surmene Trabzon Turkey", position: { lat: 40.906, lng: 40.116 } },
   { name: "أراكلي", city: "أراكلي", branch: "الساحل والقرى", latin: "Araklı", category: "cities", label: "ساحل وبلدة", note: "بلدة ساحلية شرقي طرابزون ضمن مسار الطريق الساحلي إلى ريزا.", query: "Arakli Trabzon Turkey", position: { lat: 40.939, lng: 40.058 } },
-  { name: "واجهة كاشستوس البحرية", city: "يومرا", branch: "الساحل والخدمات", latin: "Kaşüstü Waterfront", category: "family", label: "واجهة بحرية", note: "منطقة ساحلية قرب يومرا؛ تحقق من المداخل والخدمات المتاحة قبل الزيارة.", query: "Kasustu Yomra Trabzon Turkey", position: { lat: 40.958, lng: 39.856 } },
+  { name: "حديقة الجمهورية وممشى كاش أوستو", city: "يومرا", branch: "الحدائق والمماشي العائلية", latin: "Kaşüstü Cumhuriyet Parkı & Promenade", category: "family", label: "حديقة وممشى بحري", note: "حديقة الجمهورية في كاش أوستو، قرب مبنى المحكمة وعلى الواجهة البحرية؛ تضم مساحات خضراء ومرافق عائلية ومسارات مشي ودراجات. أُضيف الممشى الحديث المجاور بناءً على توثيق الزائر؛ موضع الدبوس تقريبي داخل نطاق الحديقة.", query: "Kaşüstü Cumhuriyet Parkı Ongun Caddesi Yomra Trabzon", position: { lat: 40.958, lng: 39.856 } },
   { name: "مركز جواهر طرابزون", city: "يومرا", branch: "الساحل والخدمات", latin: "Cevahir Outlet Trabzon", category: "family", label: "تسوق ومطاعم", note: "مركز تسوق في منطقة يومرا؛ تحقق من ساعات العمل والفعاليات قبل الانطلاق.", query: "Cevahir Outlet Trabzon Yomra Turkey", position: { lat: 40.957, lng: 39.862 } },
+  { name: "زلاجة فورابارك الجبلية في يومرا", city: "يومرا", branch: "الأنشطة والمغامرات", latin: "Forapark Dağ Kızağı ve Restoran", category: "family", label: "زلاجة جبلية ومغامرات", note: "فورابارك في كاشستوس، يومرا؛ عنوانها İskenderoğlu Sokak No:17. تحقق من مواعيد التشغيل والأسعار قبل الزيارة.", query: "Forapark Dağ Kızağı Merkezi Kaşüstü Yomra Trabzon Turkey", position: { lat: 40.949145, lng: 39.805972 } },
   { name: "حديقة ساحل أرسين", city: "أرسين", branch: "الساحل والخدمات", latin: "Arsin Sahil Parkı", category: "family", label: "حديقة ساحلية", note: "مساحة ساحلية للتنزه؛ قد تتغير الخدمات المتاحة حسب الموسم والطقس.", query: "Arsin Sahil Parki Trabzon Turkey", position: { lat: 40.953, lng: 39.927 } },
   { name: "مركز سورميني", city: "سورميني", branch: "الساحل والقرى", latin: "Sürmene Center", category: "cities", label: "أسواق وخدمات", note: "مركز البلدة على الطريق الساحلي؛ استخدم الخريطة للتحقق من الوجهة وساعات العمل.", query: "Surmene merkez Trabzon Turkey", position: { lat: 40.912, lng: 40.116 } },
   { name: "محال سكاكين سورميني", city: "سورميني", branch: "الساحل والقرى", latin: "Sürmene Knife Shops", category: "culture", label: "حرف محلية وتسوق", note: "تشتهر سورميني بحرفة صناعة السكاكين؛ تحقق من المتجر ومواعيد العمل قبل الزيارة.", query: "Surmene bicak dukkanlari Turkey", position: { lat: 40.912, lng: 40.118 } },
   { name: "شلالات أراكلي", city: "أراكلي", branch: "الساحل والقرى", latin: "Araklı Waterfalls", category: "nature", label: "طبيعة وشلالات", note: "وجهة طبيعية في ريف أراكلي؛ افحص حالة الطريق والطقس قبل الانطلاق.", query: "Arakli waterfalls Trabzon Turkey", position: { lat: 40.73, lng: 40.05 } },
+  { name: "أكواريوم طرابزون", city: "طرابزون", branch: "الأنشطة العائلية", latin: "Trabzon Tunnel Aquarium", category: "family", label: "نفق وأحياء بحرية", note: "أكواريوم نفق في وادي زاغنوس، يضم مسار مشاهدة للأحياء البحرية؛ تحقق من ساعات الزيارة قبل الانطلاق.", query: "Trabzon Tunnel Aquarium Zafer Ortahisar Turkey", position: { lat: 41.00072, lng: 39.720286 } },
   { name: "طرابزون", city: "طرابزون", branch: "المدينة والساحل", latin: "Trabzon", category: "cities", label: "مدينة ساحلية", note: "بوابة البحر الأسود والأسواق والمطاعم والميناء.", query: "Trabzon Turkey", position: { lat: 41.0053, lng: 39.7225 } },
+  { name: "فوروم طرابزون مول", city: "طرابزون", branch: "التسوق والأنشطة العائلية", latin: "Forum Trabzon Shopping Mall", category: "family", label: "مركز تسوق كبير", note: "مركز فوروم طرابزون على طريق الساحل، بجوار حديقة إيوف الأولمبية.", query: "Forum Trabzon Shopping Mall Turkey", position: { lat: 40.99981, lng: 39.76129 } },
+  { name: "حديقة إيوف ومرافقها", city: "طرابزون", branch: "الحدائق والأنشطة العائلية", latin: "EYOF 2011 Hatıra Parkı", category: "family", label: "حديقة عائلية", note: "حديقة إيوف المقابلة لفوروم؛ تضم مسارات ومسطحات خضراء ومرافق اجتماعية ومطعماً ومقهى ومنطقة ألعاب للأطفال.", query: "EYOF Park Trabzon", position: { lat: 41.00136, lng: 39.761072 } },
   { name: "أوزنجول", city: "طرابزون", branch: "سلطان مراد · أوزنجول · ديمركابي", latin: "Uzungöl", category: "nature", label: "بحيرة وقرية", note: "بحيرة جبلية ومسارات هادئة وإطلالات لا تنسى.", query: "Uzungol Trabzon Turkey", position: { lat: 40.6197, lng: 40.2958 } },
   { name: "ريزا", city: "ريزا", branch: "المدينة والساحل", latin: "Rize", category: "cities", label: "مدينة الشاي", note: "مزارع الشاي والمرتفعات والهواء البحري.", query: "Rize Turkey", position: { lat: 41.0201, lng: 40.5234 } },
+  { name: "برج كأس الشاي العملاق", city: "ريزا", branch: "معالم الشاي والثقافة", latin: "Rize Çay Çarşısı – Bardak Kule", category: "culture", label: "برج الشاي ومنصة مشاهدة", note: "برج كأس الشاي في مجمع Çay Çarşısı وسط ريزا، ويضم منصة مشاهدة بانورامية.", query: "Rize Çay Çarşısı Bardak Kule, Eminettin Mahallesi, Rize, Turkey", position: { lat: 41.02878, lng: 40.51844 } },
   { name: "أيدر", city: "ريزا", branch: "الطبيعة والمرتفعات", latin: "Ayder", category: "nature", label: "مرتفعات وشلالات", note: "غابات وشلالات وينابيع في قلب الطبيعة.", query: "Ayder Plateau Turkey", position: { lat: 40.9527, lng: 41.0931 } },
   { name: "دير سوميلا", city: "طرابزون", branch: "سوميلا · همسي كوي · حاجي مصطفى · زيغانا", latin: "Sümela", category: "culture", label: "تاريخ وثقافة", note: "دير تاريخي معلق بين الجبال ومسار مذهل.", query: "Sumela Monastery Turkey", position: { lat: 40.6898, lng: 39.6585 } },
   { name: "أوردو", city: "أوردو", branch: "المدينة والساحل", latin: "Ordu", category: "cities", label: "ساحل وتلفريك", note: "واجهة بحرية وتلفريك وإطلالة بانورامية.", query: "Ordu Turkey", position: { lat: 40.9839, lng: 37.8764 } },
@@ -65,7 +70,7 @@ const destinations: MapDestination[] = [
   { name: "ساحل أولاشلي", city: "أولاشلي", branch: "الساحل والقرى", latin: "Ulasli Sahili", category: "nature", label: "واجهة بحرية", note: "واجهة ساحلية محلية للتنزه؛ تحقق من الخدمات المتاحة ميدانيًا.", query: "Ulasli Sahili Golcuk Turkey", position: { lat: 40.694, lng: 29.752 } },
   { name: "دغرمندره", city: "أولاشلي", branch: "الساحل والقرى", latin: "Degirmendere", category: "family", label: "بلدة ساحلية قريبة", note: "واجهة بحرية ومقاهٍ في محيط غولجوك، مناسبة لإضافة محطة قريبة للرحلة.", query: "Degirmendere Golcuk Kocaeli Turkey", position: { lat: 40.712, lng: 29.78 } },
   { name: "باتومي", city: "جورجيا", branch: "المدينة والواجهة البحرية", latin: "Batumi", category: "cities", label: "ساحل جورجيا", note: "بوليفارد باتومي والحدائق والواجهة البحرية.", query: "Batumi Georgia", position: { lat: 41.6168, lng: 41.6367 } },
-  { name: "مرتفعات يومرا", city: "طرابزون", branch: "مرتفعات يومرا", latin: "Yomra", category: "nature", label: "مرتفعات وإطلالات", note: "إطلالات بحرية ومرافق ترفيهية قريبة من طرابزون.", query: "Yomra Trabzon Turkey", position: { lat: 40.955, lng: 39.86 } },
+  { name: "مرتفعات يومرا", city: "يومرا", branch: "مرتفعات يومرا", latin: "Yomra", category: "nature", label: "مرتفعات وإطلالات", note: "إطلالات بحرية ومرافق ترفيهية قريبة من طرابزون.", query: "Yomra Trabzon Turkey", position: { lat: 40.955, lng: 39.86 } },
   { name: "مرتفعات سلطان مراد", city: "طرابزون", branch: "سلطان مراد · أوزنجول · ديمركابي", latin: "Sultan Murat", category: "nature", label: "مرتفعات", note: "مروج جبلية وإطلالات موسمية لعشاق الطبيعة.", query: "Sultan Murat Plateau Trabzon Turkey", position: { lat: 40.74, lng: 40.18 } },
   { name: "أكشبات", city: "طرابزون", branch: "أكشبات · حيدر نبي · مغارة تشال · كاياباشا · حاجي", latin: "Akçaabat", category: "family", label: "ساحل ومرتفعات", note: "شاطئ وممشى أكشبات ومرتفعات حيدر نبي ومغارة تشال.", query: "Akcaabat Trabzon Turkey", position: { lat: 41.02, lng: 39.57 } },
   { name: "مرتفعات حيدر نبي", city: "طرابزون", branch: "أكشبات · حيدر نبي · مغارة تشال · كاياباشا · حاجي", latin: "Hıdırnebi", category: "nature", label: "مرتفعات", note: "مرتفعات خضراء وإطلالات واسعة قرب أكشبات.", query: "Hidirnebi Plateau Trabzon Turkey", position: { lat: 40.99, lng: 39.49 } },
@@ -129,14 +134,25 @@ const categoryColor: Record<MapDestination["category"], string> = {
   family: "#79a7b3",
 };
 
-export function InteractiveNorthMap() {
+type DestinationRequest = { name: string; city: string; query: string } | null;
+
+export function InteractiveNorthMap({ destinationRequest, expandRequest, onExpandedChange, onBackToDestinations }: { destinationRequest?: DestinationRequest; expandRequest?: boolean; onExpandedChange?: (expanded: boolean) => void; onBackToDestinations?: () => void }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<MapCategory>("all");
   const [selectedCity, setSelectedCity] = useState<string | null>("طرابزون");
   const [selected, setSelected] = useState<MapDestination | null>(null);
-  const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [map, setMap] = useState<any>(null);
   const [expanded, setExpanded] = useState(false);
   const markersRef = useRef<Array<{ destination: MapDestination; marker: any }>>([]);
+  const destinationsPanelRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (expandRequest) setExpanded(true);
+  }, [expandRequest]);
+
+  useEffect(() => {
+    onExpandedChange?.(expanded);
+  }, [expanded, onExpandedChange]);
 
   const cityNames = ["طرابزون", "يومرا", "أرسين", "سورميني", "أراكلي", "ريزا", "أوردو", "سامسون", "جيرسون", "إسطنبول", "يالوا", "صبنجا", "كارتبه", "بورصة", "ساكاريا", "إزميت", "أولاشلي", "أنقرة", "جورجيا"];
 
@@ -145,10 +161,20 @@ export function InteractiveNorthMap() {
     return selectedCity ? destinations.filter((item) => {
       const matchesCity = item.city === selectedCity;
       const matchesFilter = filter === "all" || item.category === filter;
-      const matchesQuery = !normalized || `${item.name} ${item.latin} ${item.label}`.toLocaleLowerCase().includes(normalized);
+      const matchesQuery = !normalized || `${item.name} ${item.latin} ${item.label} ${item.query}`.toLocaleLowerCase().includes(normalized);
       return matchesCity && matchesFilter && matchesQuery;
     }) : [];
   }, [filter, query, selectedCity]);
+
+  const handleBackToDestinations = () => {
+    setSelected(null);
+    setFilter("all");
+    setQuery("");
+    onBackToDestinations?.();
+    // On mobile the destination panel is rendered below the map. Return the
+    // visitor to that list instead of leaving the viewport at the removed detail card.
+    destinationsPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   const openDestination = (destination: MapDestination) => {
     // Keep the selected place visible in the list as well as on the map.
@@ -161,6 +187,93 @@ export function InteractiveNorthMap() {
     window.setTimeout(() => document.querySelector(".north-map-detail")?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 0);
   };
 
+  useEffect(() => {
+    if (!destinationRequest) {
+      setSelected(null);
+      setQuery("");
+      return;
+    }
+    const normalize = (value: string) => value.toLocaleLowerCase().normalize("NFKD").replace(/[\u064B-\u065F\u0670]/g, "").replace(/[أإآ]/g, "ا").replace(/ى/g, "ي").replace(/[^a-z0-9\u0600-\u06FF]+/gi, "");
+    const requested = normalize(destinationRequest.name);
+    const requestedQuery = normalize(destinationRequest.query);
+    const aliases: Record<string, string[]> = {
+      [normalize("ميدان طرابزون والأسواق")]: [normalize("ميدان طرابزون"), normalize("Meydan Trabzon Turkey")],
+      [normalize("ميدان طرابزون")]: [normalize("Meydan Trabzon Turkey")],
+      [normalize("أكواريوم طرابزون")]: [normalize("Trabzon Tunnel Aquarium")],
+      [normalize("فوروم طرابزون مول")]: [normalize("Forum Trabzon Shopping Mall Turkey")],
+      [normalize("مول فوروم طرابزون")]: [normalize("فوروم طرابزون مول"), normalize("Forum Trabzon Shopping Mall Turkey")],
+      [normalize("حديقة إيوف")]: [normalize("حديقة إيوف ومرافقها"), normalize("EYOF Park Trabzon")],
+      [normalize("حديقة إيوف المجددة")]: [normalize("حديقة إيوف ومرافقها"), normalize("EYOF Park Trabzon")],
+      [normalize("مطعم إيوف المجدد")]: [normalize("حديقة إيوف ومرافقها"), normalize("EYOF Park Trabzon")],
+      [normalize("مقهى إيوف والجلسات الخارجية")]: [normalize("حديقة إيوف ومرافقها"), normalize("EYOF Park Trabzon")],
+      [normalize("ألعاب الأطفال في حديقة إيوف")]: [normalize("حديقة إيوف ومرافقها"), normalize("EYOF Park Trabzon")],
+      // Keep every Forum-side EYOF gallery/city-guide label routed to the same verified park pin.
+      [normalize("ممشى وحديقة إيوف")]: [normalize("حديقة إيوف ومرافقها"), normalize("EYOF Park Trabzon")],
+      [normalize("حديقة الفورم")]: [normalize("حديقة إيوف ومرافقها"), normalize("EYOF Park Trabzon")],
+      [normalize("حديقة إيوف الأولمبية بجوار فوروم")]: [normalize("حديقة إيوف ومرافقها"), normalize("EYOF Park Trabzon")],
+      [normalize("ميدان")]: [normalize("ميدان طرابزون"), normalize("Meydan Trabzon Turkey")],
+      // Gallery labels that intentionally differ from the curated map-pin names.
+      // These aliases reuse existing map records only; they do not create coordinates.
+      [normalize("الممشى الجديد بجوار حديقة الجمهورية")]: [normalize("حديقة الجمهورية وممشى كاش أوستو"), normalize("Kaşüstü Cumhuriyet Parkı & Promenade")],
+      [normalize("حديقة الجمهورية في كاش أوستو")]: [normalize("حديقة الجمهورية وممشى كاش أوستو"), normalize("Kaşüstü Cumhuriyet Parkı & Promenade")],
+      [normalize("ممشى كاشوستو البحري الجديد")]: [normalize("حديقة الجمهورية وممشى كاش أوستو"), normalize("Kaşüstü Cumhuriyet Parkı & Promenade")],
+      [normalize("واجهة كاشستوس البحرية")]: [normalize("حديقة الجمهورية وممشى كاش أوستو"), normalize("Kaşüstü Cumhuriyet Parkı & Promenade")],
+      [normalize("السلطان مراد")]: [normalize("مرتفعات سلطان مراد"), normalize("Sultan Murat Plateau Trabzon Turkey")],
+      [normalize("حيدر نبي")]: [normalize("مرتفعات حيدر نبي"), normalize("Hidirnebi Plateau Trabzon Turkey")],
+      [normalize("دير صوميلا")]: [normalize("دير سوميلا"), normalize("Sumela Monastery Turkey")],
+      [normalize("بحيرة سيرا")]: [normalize("بحيرة سيرا جول"), normalize("Sera Lake Trabzon Turkey")],
+      [normalize("مرتفعات آيدر")]: [normalize("أيدر"), normalize("Ayder Plateau Turkey")],
+      [normalize("تلفريك ومرتفعات بوزتبه")]: [normalize("تلفريك بوزتبه"), normalize("Ordu Boztepe Cable Car Turkey")],
+      [normalize("واجهة أوردو البحرية")]: [normalize("شاطئ أوردو"), normalize("Ordu coast Turkey")],
+      [normalize("سورميني وسوق السكاكين")]: [normalize("محال سكاكين سورميني"), normalize("Surmene bicak dukkanlari Turkey")],
+    };
+    const requestNames = [requested, ...(aliases[requested] ?? [])];
+    const requestedCity = destinationRequest.city;
+    const isCevahirOutlet = requestedQuery.includes(normalize("Cevahir Outlet")) ||
+      requested.includes(normalize("جواهر"));
+    const isForapark = requestedQuery.includes(normalize("Forapark")) ||
+      requested.includes(normalize("زحليقة")) || requested.includes(normalize("زلاجة"));
+    const cityMatches = (item: MapDestination) =>
+      !requestedCity || item.city === requestedCity ||
+      // Cevahir Outlet and Forapark are in Kaşüstü, Yomra, even when opened
+      // from the broader Trabzon destination collection.
+      ((isCevahirOutlet || isForapark) && item.city === "يومرا");
+    // These gallery labels combine two distinct landmarks, but the curated
+    // map has no verified pin for the full pair. Keep them as a map search
+    // instead of silently dropping one landmark and opening the other.
+    const isCombinedDestinationWithoutSinglePin =
+      ((requested.includes(normalize("هامسي كوي")) && requested.includes(normalize("زيقانا"))) ||
+        (requestedQuery.includes(normalize("hamsikoy")) && requestedQuery.includes(normalize("zigana")))) ||
+      ((requested.includes(normalize("فيرتينا")) && requested.includes(normalize("زيل قلعة"))) ||
+        (requestedQuery.includes(normalize("firtina")) && requestedQuery.includes(normalize("zilkale"))));
+    const exactMatch = isCombinedDestinationWithoutSinglePin ? undefined : destinations.find((item) =>
+      cityMatches(item) && [item.name, item.latin, item.query].some((candidate) => {
+        const value = normalize(candidate);
+        return requestNames.includes(value) || value === requestedQuery;
+      })
+    );
+    // Only open a pin for an exact curated destination or an explicit alias.
+    // Fuzzy token/substring matching can mistake a city or nearby attraction
+    // for a specific gallery place that has no verified pin.
+    const match = isCombinedDestinationWithoutSinglePin ? undefined : exactMatch;
+    if (match) {
+      openDestination(match);
+      return;
+    }
+    const city = cityNames.includes(destinationRequest.city) ? destinationRequest.city : "طرابزون";
+    setSelectedCity(city);
+    setFilter("all");
+    setSelected(null);
+    setQuery(destinationRequest.name);
+  }, [destinationRequest?.name, destinationRequest?.query, destinationRequest?.city]);
+
+  // If a destination was selected before the map finished loading, focus it as soon as the map is ready.
+  useEffect(() => {
+    if (!map || !selected) return;
+    map.panTo(selected.position);
+    map.setZoom(14);
+  }, [map, selected]);
+
   // Keep map markers synchronized with the city, category, and text search.
   // This avoids showing pins that are hidden from the destination list.
   useEffect(() => {
@@ -170,10 +283,9 @@ export function InteractiveNorthMap() {
     markersRef.current.forEach(({ destination, marker }) => {
       const matchesCity = destination.city === selectedCity;
       const matchesCategory = filter === "all" || destination.category === filter;
-      const matchesQuery = !normalized || `${destination.name} ${destination.latin} ${destination.label}`.toLocaleLowerCase().includes(normalized);
+      const matchesQuery = !normalized || `${destination.name} ${destination.latin} ${destination.label} ${destination.query}`.toLocaleLowerCase().includes(normalized);
       const visible = matchesCity && matchesCategory && matchesQuery;
-      if ("setMap" in marker && typeof marker.setMap === "function") marker.setMap(visible ? map : null);
-      else marker.map = visible ? map : null;
+      if (typeof marker.setMap === "function") marker.setMap(visible ? map : null);
     });
   }, [map, selectedCity, filter, query]);
 
@@ -194,31 +306,15 @@ export function InteractiveNorthMap() {
       map.setZoom(11);
       return;
     }
-    const bounds = new google.maps.LatLngBounds();
-    cityPlaces.forEach((place) => bounds.extend(place.position));
-    map.fitBounds(bounds, 64);
+    map.fitBounds(cityPlaces.map((place) => place.position), 64);
     window.setTimeout(() => {
       const currentZoom = map.getZoom() ?? 10;
       if (currentZoom > 12) map.setZoom(12);
     }, 100);
   }, [map, selectedCity]);
 
-  useEffect(() => {
-    if (!expanded) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setExpanded(false);
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [expanded]);
-
   const directionsUrl = selected
-    ? `https://www.google.com/maps/dir/?api=1&destination=${selected.position.lat}%2C${selected.position.lng}&destination_place_id=&travelmode=driving`
+    ? `https://www.google.com/maps/dir/?api=1&destination=${selected.position.lat}%2C${selected.position.lng}&travelmode=driving`
     : "https://www.google.com/maps/search/Northern+Turkey";
   const selectedCityPlaces = destinations.filter((item) => item.city === selectedCity);
   const fallbackCenter = selected?.position ?? (selectedCityPlaces.length
@@ -230,8 +326,8 @@ export function InteractiveNorthMap() {
   const broadRegion = ["إسطنبول", "يالوا", "صبنجا", "كارتبه", "بورصة", "ساكاريا", "إزميت", "أولاشلي", "أنقرة", "جورجيا"].includes(selectedCity ?? "");
   const fallbackZoom = selected ? 13 : broadRegion ? 9 : 10;
 
-  const mapWorkspace = (
-    <div className={`north-map-experience ${expanded ? "north-map-expanded" : ""}`} dir="rtl" role={expanded ? "dialog" : undefined} aria-modal={expanded ? true : undefined} aria-label={expanded ? "الخريطة التفاعلية بالحجم الكامل" : undefined}>
+  const mapContent = (
+    <div className={`north-map-experience ${expanded ? "north-map-expanded" : ""}`} dir="rtl">
       <div className="north-map-view-actions">
         {!expanded ? <button type="button" className="north-map-expand" onClick={() => setExpanded(true)}><ExternalLink size={16} /> فتح الخريطة بحجم كامل</button> : <button type="button" className="north-map-close" onClick={() => setExpanded(false)}><X size={17} /> إغلاق الخريطة</button>}
       </div>
@@ -255,7 +351,7 @@ export function InteractiveNorthMap() {
       </div>
 
       <div className="north-map-body">
-        <aside className="north-map-destinations">
+        <aside ref={destinationsPanelRef} className="north-map-destinations">
           <div className="north-map-aside-heading"><span>{selectedCity} · الوجهات</span><strong>{visible.length} وجهات أمامك</strong></div>
           <div className="north-map-destination-list">
             {selectedCity ? Array.from(new Set(visible.map((item) => item.branch))).map((branch) => <div className="north-map-branch" key={branch}><h4>{branch}</h4>{visible.filter((item) => item.branch === branch).map((destination, index) => <button type="button" key={destination.name} aria-label={`اختيار وجهة الخريطة رقم ${index + 1}`} className={`north-map-destination ${selected?.name === destination.name ? "selected" : ""}`} onClick={() => openDestination(destination)}>
@@ -263,7 +359,7 @@ export function InteractiveNorthMap() {
               <span><strong>{destination.name}</strong><small>{destination.latin} · {destination.label}</small></span>
               <MapPin size={15} />
             </button>)}</div>) : <p className="north-map-empty">اختر مدينة من الأعلى لتظهر وجهاتها هنا.</p>}
-            {!visible.length && selectedCity && <p className="north-map-empty">لم نجد هذه الوجهة. جرّب اسم مدينة أو طبيعة.</p>}
+            {!visible.length && selectedCity && (query.trim() || destinationRequest) && <div className="north-map-empty"><p>لم نعثر على نقطة موثقة لهذا الاسم داخل دليل الخريطة حتى الآن، لذلك لن نضع دبوسًا تخمينيًا.</p><div className="north-map-fallback-actions"><a className="north-map-directions" href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destinationRequest?.query ?? query)}&travelmode=driving`} target="_blank" rel="noreferrer"><Navigation size={15} /> ابدأ الطريق إلى الوجهة</a><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destinationRequest?.query ?? query)}`} target="_blank" rel="noreferrer">تحقق من الموقع على Google Maps <ExternalLink size={14} /></a></div><button type="button" className="north-map-back" onClick={handleBackToDestinations}><ArrowLeft size={16} /> العودة لاختيار وجهة أخرى</button></div>}
           </div>
         </aside>
 
@@ -271,31 +367,45 @@ export function InteractiveNorthMap() {
           <MapView className="north-map-canvas" initialCenter={{ lat: 41.0053, lng: 39.7225 }} initialZoom={10} fallbackCenter={fallbackCenter} fallbackZoom={fallbackZoom} fallbackLabel={selected?.name ?? selectedCity ?? "الشمال التركي"} onMapReady={(readyMap) => {
             setMap(readyMap);
             markersRef.current = [];
+            const L = window.L;
+            if (!L || !readyMap?.leafletMap) return;
             destinations.forEach((destination) => {
-              const markerContent = Object.assign(document.createElement("button"), { className: "north-map-marker", type: "button", ariaLabel: `فتح ${destination.name}`, innerHTML: `<span style="background:${categoryColor[destination.category]}"></span><b>${destination.name}</b>` });
               try {
-                const marker = google.maps.marker?.AdvancedMarkerElement
-                  ? new google.maps.marker.AdvancedMarkerElement({ map: null, position: destination.position, title: destination.name, content: markerContent })
-                  : new google.maps.Marker({ map: null, position: destination.position, title: destination.name });
-                marker.addListener("click", () => openDestination(destination));
+                const icon = L.divIcon({
+                  className: "north-map-leaflet-icon",
+                  html: `<button class="north-map-marker" type="button" aria-label="فتح ${destination.name}"><span style="background:${categoryColor[destination.category]}"></span><b>${destination.name}</b></button>`,
+                  iconSize: [100, 34],
+                  iconAnchor: [50, 17],
+                });
+                const leafletMarker = L.marker([destination.position.lat, destination.position.lng], { icon });
+                leafletMarker.on("click", () => openDestination(destination));
+                const marker = {
+                  setMap: (target: any) => {
+                    if (target?.leafletMap) leafletMarker.addTo(target.leafletMap);
+                    else if (leafletMarker._map) leafletMarker.remove();
+                  },
+                  addListener: (event: string, callback: () => void) => leafletMarker.on(event, callback),
+                };
                 markersRef.current.push({ destination, marker });
               } catch (error) {
                 console.warn("Map marker unavailable; the destination list remains interactive.", error);
               }
             });
           }} />
+          {selected && <div className="north-map-detail" role="region" aria-label={`تفاصيل ${selected.name}`}>
+            <button type="button" className="north-map-back" onClick={handleBackToDestinations}><ArrowLeft size={16} /> العودة لاختيار وجهة أخرى</button>
+            <div className="north-map-detail-icon"><Sparkles size={20} /></div>
+            <div className="north-map-detail-copy"><span>{selected.label} · {selected.latin}</span><strong>{selected.name}</strong><p>{selected.note}</p></div>
+            <a className="north-map-directions" href={directionsUrl} target="_self"><Navigation size={17} /> احصل على الاتجاهات <ExternalLink size={14} /></a>
+          </div>}
         </div>
       </div>
-
-      {selected && <div className="north-map-detail" role="region" aria-label={`تفاصيل ${selected.name}`}>
-        <div className="north-map-detail-icon"><Sparkles size={20} /></div>
-        <div className="north-map-detail-copy"><span>{selected.label} · {selected.latin}</span><strong>{selected.name}</strong><p>{selected.note}</p></div>
-        <a className="north-map-directions" href={directionsUrl} target="_blank" rel="noreferrer"><Navigation size={17} /> احصل على الاتجاهات <ExternalLink size={14} /></a>
-      </div>}
     </div>
   );
 
-  return expanded ? createPortal(mapWorkspace, document.body) : mapWorkspace;
+  // A fixed map nested inside .site-shell is clipped by the shell overflow.
+  // Render the expanded experience at document.body so mobile full-screen is truly full-screen.
+  return expanded ? createPortal(mapContent, document.body) : mapContent;
 }
 
 export default InteractiveNorthMap;
