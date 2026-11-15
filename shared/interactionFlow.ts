@@ -1,179 +1,77 @@
-/**
- * ALASSAUL-AI — interactionFlow
- * Smart fallback when GROQ API fails + speech helpers
- */
+import type { LiveStatus } from "./liveStatus";
 
-export function getChatErrorMessage(error: any, question?: string): string {
-  const q = (question || "").toLowerCase().trim();
+export function getLiveFrameMode(status: LiveStatus): "iframe" | "stopped" {
+  return status === "stopped" ? "stopped" : "iframe";
+}
 
-  // 1. تحية
-  if (q.includes("سلام") || q.includes("هلا") || q.includes("مرحبا") || q.includes("اهلا")) {
-    return "وعليكم السلام ورحمة الله وبركاته! هلا والله، كيف أقدر أساعدك اليوم؟";
+export function getMicrophoneErrorMessage(error?: string) {
+  if (error === "not-allowed" || error === "service-not-allowed") {
+    return "لم يُسمح بالوصول إلى الميكروفون. فعّل إذن الميكروفون من إعدادات المتصفح ثم حاول مرة أخرى.";
   }
+  if (error === "no-speech") {
+    return "لم أسمع كلاماً واضحاً. تحدث بالعربية بعد الضغط على الميكروفون.";
+  }
+  if (error === "network") {
+    return "تعذر الاتصال بخدمة التعرف الصوتي. اكتب سؤالك أو جرّب الميكروفون مرة أخرى.";
+  }
+  return "حدثت مشكلة في التعرف الصوتي. جرّب مرة أخرى أو اكتب سؤالك.";
+}
 
-  // 2. عواصم العالم - خريطة شاملة
-  const capitals: Record<string, string> = {
-    "فرنسا": "باريس",
-    "المانيا": "برلين",
-    "ألمانيا": "برلين",
-    "ايطاليا": "روما",
-    "إيطاليا": "روما",
-    "تركيا": "أنقرة",
-    "بريطانيا": "لندن",
-    "انجلترا": "لندن",
-    "اسبانيا": "مدريد",
-    "إسبانيا": "مدريد",
-    "السعودية": "الرياض",
-    "مصر": "القاهرة",
-    "الامارات": "أبوظبي",
-    "الإمارات": "أبوظبي",
-    "قطر": "الدوحة",
-    "الكويت": "مدينة الكويت",
-    "البحرين": "المنامة",
-    "عمان": "مسقط",
-    "الاردن": "عمان",
-    "لبنان": "بيروت",
-    "البرازيل": "برازيليا",
-    "امريكا": "واشنطن",
-    "أمريكا": "واشنطن",
-    "اليابان": "طوكيو",
-    "الصين": "بكين",
-    "روسيا": "موسكو",
-    "الهند": "نيودلهي",
-    "كندا": "أوتاوا",
-    "استراليا": "كانبرا",
-    "أستراليا": "كانبرا",
-    "اليونان": "أثينا",
-    "المغرب": "الرباط",
-    "الجزائر": "الجزائر",
-    "تونس": "تونس",
-    "اليمن": "صنعاء",
-    "العراق": "بغداد",
-    "سوريا": "دمشق",
-    "السودان": "الخرطوم",
-    "اندونيسيا": "جاكرتا",
-    "إندونيسيا": "جاكرتا",
-    "باكستان": "إسلام آباد",
-    "ايران": "طهران",
-    "إيران": "طهران",
-  };
+function collapseRepeatedSpeech(text: string) {
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  const result: string[] = [];
+  const normalize = (word: string) => word
+    .toLocaleLowerCase("ar")
+    .replace(/[\u064B-\u065F\u0670\u0640]/g, "")
+    .replace(/[.,،؛:!?؟]+$/g, "");
 
-  if (q.includes("عاصمة")) {
-    for (const [country, capital] of Object.entries(capitals)) {
-      if (q.includes(country.toLowerCase())) {
-        return capital;
+  for (const word of words) {
+    result.push(word);
+    // Speech engines sometimes emit the same short phrase several times.
+    // Collapse only immediately repeated sequences, preserving the sentence order.
+    let changed = true;
+    while (changed) {
+      changed = false;
+      const maxSize = Math.min(8, Math.floor(result.length / 2));
+      for (let size = maxSize; size >= 1; size -= 1) {
+        const left = result.slice(result.length - size * 2, result.length - size).map(normalize);
+        const right = result.slice(result.length - size).map(normalize);
+        if (left.every((token, index) => token === right[index])) {
+          result.splice(result.length - size, size);
+          changed = true;
+          break;
+        }
       }
     }
-    // لو سأل عاصمة بشكل عام بدون دولة واضحة
-    return "أبشر! حدد لي الدولة، مثل: ما هي عاصمة البرازيل؟";
   }
-
-  // 3. المسافات - خريطة مسافات معروفة
-  const distances: Record<string, string> = {
-    "جدة-ينبع": "حوالي 350 كم",
-    "ينبع-جدة": "حوالي 350 كم",
-    "اسطنبول-طرابزون": "حوالي 1060 كم",
-    "طرابزون-اسطنبول": "حوالي 1060 كم",
-    "انقرة-طرابزون": "حوالي 750 كم",
-    "طرابزون-انقرة": "حوالي 750 كم",
-    "الرياض-جدة": "حوالي 950 كم",
-    "جدة-الرياض": "حوالي 950 كم",
-    "الرياض-ينبع": "حوالي 1000 كم",
-    "ينبع-الرياض": "حوالي 1000 كم",
-    "الرياض-الدمام": "حوالي 400 كم",
-    "جدة-مكة": "حوالي 80 كم",
-    "مكة-جدة": "حوالي 80 كم",
-    "ريزا-طرابزون": "حوالي 75 كم",
-    "طرابزون-ريزا": "حوالي 75 كم",
-    "اوردو-طرابزون": "حوالي 180 كم",
-    "طرابزون-اوردو": "حوالي 180 كم",
-    "سامسون-طرابزون": "حوالي 350 كم",
-    "طرابزون-سامسون": "حوالي 350 كم",
-  };
-
-  if (q.includes("مسافة") || q.includes("كم تبعد") || q.includes("المسافه") || q.includes("المسافة") || q.includes("تبعد")) {
-    for (const [key, value] of Object.entries(distances)) {
-      const parts = key.split("-");
-      if (q.includes(parts[0]) && q.includes(parts[1])) {
-        return value;
-      }
-    }
-    // رد عام ذكي للمسافات غير المحفوظة
-    return "المسافة تحتاج حساب على الخريطة. حدد لي المدينتين مثل: جدة وينبع، وأعطيك المسافة التقريبية.";
-  }
-
-  // 4. طرابزون والسياحة
-  if (q.includes("طرابزون") || q.includes("اوزنجول") || q.includes("أوزنجول") || q.includes("ايدر") || q.includes("آيدر")) {
-    return "طرابزون جوها اليوم حوالي 19 درجة، وأوزنجول من أجمل البحيرات. تبغى أرتب لك برنامج؟";
-  }
-
-  // 5. أسئلة عامة
-  if (q.includes("كيف حالك") || q.includes("شلونك") || q.includes("اخبارك")) {
-    return "أبشرك بخير! جاهز أساعدك في أي شي عن السفر أو المعلومات العامة.";
-  }
-
-  if (q.includes("شكرا") || q.includes("يعطيك العافية")) {
-    return "العفو! حاضرين لك في أي وقت.";
-  }
-
-  if (q.includes("من انت") || q.includes("من أنت") || q.includes("وش اسمك")) {
-    return "أنا مساعد Alassaul — خبير شمال تركيا وأجاوبك عن أي شي.";
-  }
-
-  // 6. Fallback ذكي ومختصر - ما يقول "لم أتمكن"
-  if (question && question.trim().length > 2) {
-    return `أبشر! سؤالك عن "${question.trim().slice(0, 40)}" واضح. جرب تصيغه بطريقة ثانية أو حدد المدينة والدولة عشان أجاوبك بدقة.`;
-  }
-
-  return "هلا والله! كيف أقدر أساعدك؟";
+  return result.join(" ");
 }
 
-export function getMicrophoneErrorMessage(errorCode?: string): string {
-  switch (errorCode) {
-    case "not-allowed":
-    case "permission-denied":
-      return "الميكروفون مقفل. اسمح للمتصفح باستخدام الميكروفون من إعدادات الموقع، ثم جرب مرة ثانية.";
-    case "no-speech":
-      return "ما سمعت شي. قرب من الميكروفون وتكلم بوضوح.";
-    case "audio-capture":
-      return "ما لقيت ميكروفون. تأكد أن الجهاز فيه ميكروفون شغال.";
-    case "network":
-      return "انقطع الاتصال. تأكد من النت وحاول مرة ثانية.";
-    default:
-      return "تعذر بدء الميكروفون. اكتب سؤالك كتابة لو تحب.";
-  }
+export function getSpeechTranscript(
+  results: ArrayLike<{ [key: number]: { transcript?: string }; isFinal?: boolean }> | undefined,
+  finalOnly = false,
+) {
+  if (!results || typeof results.length !== "number") return "";
+  const transcript = Array.from({ length: results.length }, (_, index) => results[index])
+    .filter((result) => result && (!finalOnly || result.isFinal === true))
+    .map((result) => result?.[0]?.transcript ?? "")
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+  return collapseRepeatedSpeech(transcript);
 }
 
-export function getLiveFrameMode() {
-  return "live";
-}
-
-export function getSpeechTranscript(results: any, onlyFinal = false): string {
-  if (!results || !results.length) return "";
-  let finalText = "";
-  let interimText = "";
-  
-  for (let i = 0; i < results.length; i++) {
-    const res = results[i];
-    if (!res || !res[0]) continue;
-    const transcript = res[0].transcript || "";
-    if (!transcript) continue;
-    
-    // فقط النص النهائي
-    if (res.isFinal) {
-      finalText += transcript + " ";
-    } else {
-      interimText += transcript + " ";
-    }
+export function getChatErrorMessage(error: unknown) {
+  const raw = error instanceof Error ? error.message : String(error ?? "");
+  const normalized = raw.toLowerCase();
+  if (normalized.includes("429") || normalized.includes("rate limit") || normalized.includes("too many")) {
+    return "المساعد مشغول حالياً بسبب كثرة الطلبات. انتظر لحظات ثم أعد إرسال السؤال.";
   }
-  
-  finalText = finalText.trim();
-  interimText = interimText.trim();
-  
-  if (onlyFinal) {
-    return finalText;
+  if (normalized.includes("401") || normalized.includes("403") || normalized.includes("api key") || normalized.includes("not configured")) {
+    return "خدمة الذكاء الاصطناعي غير مهيأة حالياً. يمكن متابعة استخدام البحث والبث، وسيظهر المساعد فور عودة الخدمة.";
   }
-  
-  // لو فيه نهائي، ارجعه، وإلا ارجع المؤقت لكن بدون تكرار
-  return finalText || interimText;
+  if (normalized.includes("network") || normalized.includes("fetch failed") || normalized.includes("timeout") || normalized.includes("timed out") || normalized.includes("502") || normalized.includes("503") || normalized.includes("504") || normalized.includes("llm invoke failed")) {
+    return "تعذر الاتصال بخدمة المساعد الآن. تحقق من الاتصال ثم أعد إرسال السؤال، أو جرّب سؤالاً قصيراً.";
+  }
+  return "لم أتمكن من تجهيز إجابة الآن. أعد إرسال السؤال بصياغة قصيرة، وإذا استمر الخطأ استخدم الكتابة مؤقتاً.";
 }
